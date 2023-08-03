@@ -1,17 +1,20 @@
 package org.jsp.shopping.dto;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
+import jakarta.persistence.OneToMany;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -28,10 +31,10 @@ public class Merchant {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
-	
+
 	@NotBlank(message = "Name must not be blank.")
 	private String name;
-	
+
 	@Email(message = "Please provide a valid email address.")
 	private String email;
 
@@ -59,4 +62,7 @@ public class Merchant {
 	@Lob
 	@Column(columnDefinition = "MEDIUMBLOB")
 	private byte[] picture;
+
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	List<Product> products;
 }
