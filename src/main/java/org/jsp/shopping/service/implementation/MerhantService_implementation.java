@@ -53,7 +53,7 @@ public class MerhantService_implementation implements MerachantService {
 			Merchant merchant2 = merchantDao.save(merchant);
 			structure.setData(merchant2);
 			structure.setStatus(HttpStatus.CREATED.value());
-			structure.setMessage("Account created successfully");
+			structure.setMessage("OTP Send Successfully");
 			return new ResponseEntity<>(structure, HttpStatus.CREATED);
 		} else {
 			structure.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -109,12 +109,13 @@ public class MerhantService_implementation implements MerachantService {
 		if (merchant == null) {
 			structure.setData(null);
 			structure.setMessage("Incorrect Email");
-			structure.setStatus(HttpStatus.BAD_REQUEST.value());
-			return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
 			if (merchant.getPassword().equals(password)) {
 				if (merchant.isStatus()) {
 					session.setAttribute("merchant", merchant);
+
 					structure.setData(merchant);
 					structure.setMessage("Login Success");
 					structure.setStatus(HttpStatus.CREATED.value());
@@ -140,8 +141,8 @@ public class MerhantService_implementation implements MerachantService {
 		if (session.getAttribute("merchant") == null) {
 			structure.setData(null);
 			structure.setMessage("Login Again");
-			structure.setStatus(HttpStatus.BAD_REQUEST.value());
-			return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
 			Merchant merchant = (Merchant) session.getAttribute("merchant");
 
@@ -169,6 +170,59 @@ public class MerhantService_implementation implements MerachantService {
 			structure.setMessage("Product Added Successfully");
 			structure.setStatus(HttpStatus.CREATED.value());
 			return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+		}
+	}
+
+	public ResponseEntity<ResponseStructure<Merchant>> fetchallproduct(HttpSession session) {
+		ResponseStructure<Merchant> structure = new ResponseStructure<>();
+		if (session.getAttribute("merchant") == null) {
+			structure.setData(null);
+			structure.setMessage("Login Again");
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+		} else {
+			Merchant merchant = (Merchant) session.getAttribute("merchant");
+
+			if (merchant.getProducts() == null || merchant.getProducts().isEmpty()) {
+				structure.setData(null);
+				structure.setMessage("Product Not Found");
+				structure.setStatus(HttpStatus.NOT_FOUND.value());
+				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+			} else {
+				structure.setData(merchant);
+				structure.setMessage("ProductFound");
+				structure.setStatus(HttpStatus.FOUND.value());
+				return new ResponseEntity<>(structure, HttpStatus.FOUND);
+			}
+		}
+	}
+
+	public ResponseEntity<ResponseStructure<Merchant>> deleteProduct(int id, HttpSession session) {
+		ResponseStructure<Merchant> structure = new ResponseStructure<>();
+		if (session.getAttribute("merchant") == null) {
+			structure.setData(null);
+			structure.setMessage("Login Again");
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+		} else {
+			Product product = merchantDao.findProductById(id);
+			Merchant merchant = (Merchant) session.getAttribute("merchant");
+			merchant.getProducts().remove(product);
+			merchantDao.save(merchant);
+			merchantDao.removeProduct(product);
+			structure.setMessage("Deleted Successfully");
+			structure.setStatus(HttpStatus.ACCEPTED.value());
+//			return new ResponseEntity<>(structure, HttpStatus.ACCEPTED);
+			if (merchant.getProducts() == null || merchant.getProducts().isEmpty()) {
+				structure.setStatus(HttpStatus.NOT_FOUND.value());
+				structure.setMessage("Products Not Found");
+				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+			} else {
+				structure.setMessage("Deleted Successfully");
+				structure.setStatus(HttpStatus.ACCEPTED.value());
+				return new ResponseEntity<>(structure, HttpStatus.ACCEPTED);
+			}
+
 		}
 	}
 

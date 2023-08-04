@@ -1,5 +1,9 @@
 package org.jsp.shopping.helper;
 
+import java.util.List;
+
+import org.jsp.shopping.dto.Product;
+
 import lombok.Data;
 
 @Data

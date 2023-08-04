@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 @RestController
@@ -64,7 +65,7 @@ public class MerchantController {
 
 	@PostMapping("/login")
 	public ResponseEntity<ResponseStructure<Merchant>> login(@RequestParam String email, @RequestParam String password,
-			HttpSession session) {
+			HttpSession session, HttpServletResponse response) {
 		return merhantService_implementation.login(email, password, session);
 	}
 
@@ -72,5 +73,15 @@ public class MerchantController {
 	public ResponseEntity<ResponseStructure<Merchant>> addProduct(HttpSession session, @ModelAttribute Product product,
 			@RequestParam MultipartFile pic) throws IOException {
 		return merhantService_implementation.addProduct(session, product, pic);
+	}
+
+	@GetMapping("/product-view")
+	public ResponseEntity<ResponseStructure<Merchant>> fetchallproduct(HttpSession session) {
+		return merhantService_implementation.fetchallproduct(session);
+	}
+
+	@GetMapping("/product-delete/{id}")
+	public ResponseEntity<ResponseStructure<Merchant>> deleteProduct(@PathVariable int id,HttpSession session){
+		return merhantService_implementation.deleteProduct(id,session);
 	}
 }
