@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.jsp.shopping.Repository.ProductRepository;
 import org.jsp.shopping.dao.Merchant_dao;
 import org.jsp.shopping.dto.Merchant;
 import org.jsp.shopping.dto.Product;
@@ -27,6 +28,9 @@ public class MerhantService_implementation implements MerachantService {
 
 	@Autowired
 	SendMail mail;
+
+	@Autowired
+	ProductRepository productRepository;
 
 	@Override
 	public ResponseEntity<ResponseStructure<Merchant>> signup(Merchant merchant, String date, MultipartFile pic)
@@ -207,23 +211,75 @@ public class MerhantService_implementation implements MerachantService {
 		} else {
 			Product product = merchantDao.findProductById(id);
 			Merchant merchant = (Merchant) session.getAttribute("merchant");
-			merchant.getProducts().remove(product);
-			merchantDao.save(merchant);
-			merchantDao.removeProduct(product);
-			structure.setMessage("Deleted Successfully");
 			structure.setStatus(HttpStatus.ACCEPTED.value());
-//			return new ResponseEntity<>(structure, HttpStatus.ACCEPTED);
 			if (merchant.getProducts() == null || merchant.getProducts().isEmpty()) {
 				structure.setStatus(HttpStatus.NOT_FOUND.value());
 				structure.setMessage("Products Not Found");
 				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
 			} else {
-				structure.setMessage("Deleted Successfully");
+
+				merchant.getProducts().remove(product);
+				session.removeAttribute("merchant");
+				session.setAttribute("merchant", merchantDao.save(merchant));
+				merchantDao.removeProduct(product);
 				structure.setStatus(HttpStatus.ACCEPTED.value());
+				structure.setMessage("Deleted Successfully");
 				return new ResponseEntity<>(structure, HttpStatus.ACCEPTED);
 			}
 
 		}
 	}
 
+	public ResponseEntity<ResponseStructure<Merchant>> updateProduct(Product product, HttpSession session) {
+		ResponseStructure<Merchant> structure = new ResponseStructure<>();
+		if (session.getAttribute("merchant") == null) {
+			structure.setData(null);
+			structure.setMessage("Login Again");
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+		} else {
+			Merchant merchant1 = (Merchant) session.getAttribute("merchant");
+			Merchant merchant = merchantDao.findByEmail(merchant1.getEmail());
+			session.setAttribute("merchant", merchant);
+			if (merchant.getProducts() == null || merchant.getProducts().isEmpty()) {
+				structure.setData(merchant);
+				structure.setMessage("Product Not Found");
+				structure.setStatus(HttpStatus.CREATED.value());
+				return new ResponseEntity<>(structure, HttpStatus.CREATED);
+			} else {
+				product.setImage(merchantDao.findProductById(product.getId()).getImage());
+				product.setStatus(merchantDao.findProductById(product.getId()).isStatus());
+				productRepository.save(product);
+				structure.setData(merchant);
+				structure.setMessage("Product UpdatedSuccessfully");
+				structure.setStatus(HttpStatus.CREATED.value());
+//				session.setAttribute("merchant", );
+				return new ResponseEntity<>(structure, HttpStatus.CREATED);
+			}
+		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<Merchant>> updateProduct(int id, HttpSession session) {
+		Product product = merchantDao.findProductById(id);
+		ResponseStructure<Merchant> structure = new ResponseStructure<>();
+		if (session.getAttribute("merchant") == null) {
+			structure.setData(null);
+			structure.setMessage("Login Again");
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+		} else {
+			if (product == null) {
+				structure.setData(null);
+				structure.setStatus(HttpStatus.NOT_FOUND.value());
+				structure.setMessage("Product Not Found");
+				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+			} else {
+				structure.setData2(product);
+				structure.setStatus(HttpStatus.FOUND.value());
+				structure.setMessage("Product Found");
+				return new ResponseEntity<>(structure, HttpStatus.FOUND);
+			}
+		}
+	}
 }

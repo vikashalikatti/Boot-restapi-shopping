@@ -26,4 +26,8 @@ public interface MerachantService {
 	public ResponseEntity<ResponseStructure<Merchant>> fetchallproduct(HttpSession session);
 
 	public ResponseEntity<ResponseStructure<Merchant>> deleteProduct(int id, HttpSession session);
+
+	public ResponseEntity<ResponseStructure<Merchant>> updateProduct(int id, HttpSession session);
+
+	public ResponseEntity<ResponseStructure<Merchant>> updateProduct(Product product, HttpSession session);
 }

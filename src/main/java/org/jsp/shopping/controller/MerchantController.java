@@ -81,7 +81,17 @@ public class MerchantController {
 	}
 
 	@GetMapping("/product-delete/{id}")
-	public ResponseEntity<ResponseStructure<Merchant>> deleteProduct(@PathVariable int id,HttpSession session){
-		return merhantService_implementation.deleteProduct(id,session);
+	public ResponseEntity<ResponseStructure<Merchant>> deleteProduct(@PathVariable int id, HttpSession session) {
+		return merhantService_implementation.deleteProduct(id, session);
+	}
+
+	@GetMapping("/product-update/{id}")
+	public ResponseEntity<ResponseStructure<Merchant>> updateProduct(@PathVariable int id, HttpSession session) {
+		return merhantService_implementation.updateProduct(id, session);
+	}
+
+	@PostMapping("/product-update/{id}")
+	public ResponseEntity<ResponseStructure<Merchant>> updateProdut(Product product,HttpSession session){
+		return merhantService_implementation.updateProduct(product,session);
 	}
 }
