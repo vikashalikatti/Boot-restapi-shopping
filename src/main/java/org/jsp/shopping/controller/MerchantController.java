@@ -1,6 +1,7 @@
 package org.jsp.shopping.controller;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.jsp.shopping.dto.Merchant;
 import org.jsp.shopping.dto.Product;
@@ -76,22 +77,22 @@ public class MerchantController {
 	}
 
 	@GetMapping("/product-view")
-	public ResponseEntity<ResponseStructure<Merchant>> fetchallproduct(HttpSession session) {
-		return merhantService_implementation.fetchallproduct(session);
+	public ResponseEntity<ResponseStructure<List<Product>>> fetchallproduct(HttpSession session) {
+		return merhantService_implementation.fetchAllProducts(session);
 	}
 
 	@GetMapping("/product-delete/{id}")
-	public ResponseEntity<ResponseStructure<Merchant>> deleteProduct(@PathVariable int id, HttpSession session) {
+	public ResponseEntity<ResponseStructure<Product>> deleteProduct(@PathVariable int id, HttpSession session) {
 		return merhantService_implementation.deleteProduct(id, session);
 	}
 
 	@GetMapping("/product-update/{id}")
-	public ResponseEntity<ResponseStructure<Merchant>> updateProduct(@PathVariable int id, HttpSession session) {
+	public ResponseEntity<ResponseStructure<Product>> updateProduct(@PathVariable int id, HttpSession session) {
 		return merhantService_implementation.updateProduct(id, session);
 	}
 
 	@PostMapping("/product-update/{id}")
-	public ResponseEntity<ResponseStructure<Merchant>> updateProdut(Product product,HttpSession session){
-		return merhantService_implementation.updateProduct(product,session);
+	public ResponseEntity<ResponseStructure<Product>> updateProdut(@RequestBody Product product, HttpSession session) {
+		return merhantService_implementation.updateProduct(product, session);
 	}
 }

@@ -1,6 +1,7 @@
 package org.jsp.shopping.service;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.jsp.shopping.dto.Merchant;
 import org.jsp.shopping.dto.Product;
@@ -23,11 +24,11 @@ public interface MerachantService {
 	public ResponseEntity<ResponseStructure<Merchant>> addProduct(HttpSession session, Product product,
 			MultipartFile pic) throws IOException;
 
-	public ResponseEntity<ResponseStructure<Merchant>> fetchallproduct(HttpSession session);
+	public ResponseEntity<ResponseStructure<List<Product>>> fetchAllProducts(HttpSession session);
 
-	public ResponseEntity<ResponseStructure<Merchant>> deleteProduct(int id, HttpSession session);
+	public ResponseEntity<ResponseStructure<Product>> deleteProduct(int id, HttpSession session);
 
-	public ResponseEntity<ResponseStructure<Merchant>> updateProduct(int id, HttpSession session);
+	public ResponseEntity<ResponseStructure<Product>> updateProduct(int id, HttpSession session);
 
-	public ResponseEntity<ResponseStructure<Merchant>> updateProduct(Product product, HttpSession session);
+	public ResponseEntity<ResponseStructure<Product>> updateProduct(Product product, HttpSession session);
 }

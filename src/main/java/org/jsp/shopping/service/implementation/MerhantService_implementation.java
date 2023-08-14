@@ -177,32 +177,37 @@ public class MerhantService_implementation implements MerachantService {
 		}
 	}
 
-	public ResponseEntity<ResponseStructure<Merchant>> fetchallproduct(HttpSession session) {
-		ResponseStructure<Merchant> structure = new ResponseStructure<>();
-		if (session.getAttribute("merchant") == null) {
-			structure.setData(null);
-			structure.setMessage("Login Again");
-			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
-			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
-		} else {
-			Merchant merchant = (Merchant) session.getAttribute("merchant");
+	@Override
+	public ResponseEntity<ResponseStructure<List<Product>>> fetchAllProducts(HttpSession session) {
+		ResponseStructure<List<Product>> responseStructure = new ResponseStructure<>();
 
-			if (merchant.getProducts() == null || merchant.getProducts().isEmpty()) {
-				structure.setData(null);
-				structure.setMessage("Product Not Found");
-				structure.setStatus(HttpStatus.NOT_FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
-			} else {
-				structure.setData(merchant);
-				structure.setMessage("ProductFound");
-				structure.setStatus(HttpStatus.FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.FOUND);
+		Merchant merchant = (Merchant) session.getAttribute("merchant");
+
+		if (merchant == null) {
+			responseStructure.setData(null);
+			responseStructure.setMessage("Login Again");
+			responseStructure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(responseStructure, HttpStatus.UNAUTHORIZED);
+		} else {
+
+			List<Product> products = merchant.getProducts();
+
+			if (products == null || products.isEmpty()) {
+				responseStructure.setData(null);
+				responseStructure.setMessage("No Products Found");
+				responseStructure.setStatus(HttpStatus.NOT_FOUND.value());
+				return new ResponseEntity<>(responseStructure, HttpStatus.NOT_FOUND);
 			}
+
+			responseStructure.setData(products);
+			responseStructure.setMessage("Products Found");
+			responseStructure.setStatus(HttpStatus.OK.value());
+			return new ResponseEntity<>(responseStructure, HttpStatus.OK);
 		}
 	}
 
-	public ResponseEntity<ResponseStructure<Merchant>> deleteProduct(int id, HttpSession session) {
-		ResponseStructure<Merchant> structure = new ResponseStructure<>();
+	public ResponseEntity<ResponseStructure<Product>> deleteProduct(int id, HttpSession session) {
+		ResponseStructure<Product> structure = new ResponseStructure<>();
 		if (session.getAttribute("merchant") == null) {
 			structure.setData(null);
 			structure.setMessage("Login Again");
@@ -230,56 +235,61 @@ public class MerhantService_implementation implements MerachantService {
 		}
 	}
 
-	public ResponseEntity<ResponseStructure<Merchant>> updateProduct(Product product, HttpSession session) {
-		ResponseStructure<Merchant> structure = new ResponseStructure<>();
-		if (session.getAttribute("merchant") == null) {
-			structure.setData(null);
-			structure.setMessage("Login Again");
-			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
-			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
-		} else {
-			Merchant merchant1 = (Merchant) session.getAttribute("merchant");
-			Merchant merchant = merchantDao.findByEmail(merchant1.getEmail());
-			session.setAttribute("merchant", merchant);
-			if (merchant.getProducts() == null || merchant.getProducts().isEmpty()) {
-				structure.setData(merchant);
-				structure.setMessage("Product Not Found");
-				structure.setStatus(HttpStatus.CREATED.value());
-				return new ResponseEntity<>(structure, HttpStatus.CREATED);
-			} else {
-				product.setImage(merchantDao.findProductById(product.getId()).getImage());
-				product.setStatus(merchantDao.findProductById(product.getId()).isStatus());
-				productRepository.save(product);
-				structure.setData(merchant);
-				structure.setMessage("Product UpdatedSuccessfully");
-				structure.setStatus(HttpStatus.CREATED.value());
-//				session.setAttribute("merchant", );
-				return new ResponseEntity<>(structure, HttpStatus.CREATED);
-			}
-		}
-	}
-
 	@Override
-	public ResponseEntity<ResponseStructure<Merchant>> updateProduct(int id, HttpSession session) {
+	public ResponseEntity<ResponseStructure<Product>> updateProduct(int id, HttpSession session) {
 		Product product = merchantDao.findProductById(id);
-		ResponseStructure<Merchant> structure = new ResponseStructure<>();
 		if (session.getAttribute("merchant") == null) {
+			ResponseStructure<Product> structure = new ResponseStructure<>();
 			structure.setData(null);
 			structure.setMessage("Login Again");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
+			ResponseStructure<Product> structure = new ResponseStructure<>();
 			if (product == null) {
 				structure.setData(null);
 				structure.setStatus(HttpStatus.NOT_FOUND.value());
 				structure.setMessage("Product Not Found");
 				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
 			} else {
-				structure.setData2(product);
+				structure.setData(product);
 				structure.setStatus(HttpStatus.FOUND.value());
 				structure.setMessage("Product Found");
 				return new ResponseEntity<>(structure, HttpStatus.FOUND);
 			}
 		}
 	}
+
+	public ResponseEntity<ResponseStructure<Product>> updateProduct(Product product, HttpSession session) {
+
+		if (session.getAttribute("merchant") == null) {
+			ResponseStructure<Product> structure = new ResponseStructure<>();
+			structure.setData(null);
+			structure.setMessage("Login Again");
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+		} else {
+			ResponseStructure<Product> structure = new ResponseStructure<>();
+			Merchant merchant1 = (Merchant) session.getAttribute("merchant");
+			Merchant merchant = merchantDao.findByEmail(merchant1.getEmail());
+			session.setAttribute("merchant", merchant);
+			if (merchant.getProducts() == null || merchant.getProducts().isEmpty()) {
+				structure.setData(product);
+				structure.setMessage("Product Not Found");
+				structure.setStatus(HttpStatus.CREATED.value());
+				return new ResponseEntity<>(structure, HttpStatus.CREATED);
+			} else {
+				product.setImage(merchantDao.findProductById(product.getId()).getImage());
+				product.setStatus(merchantDao.findProductById(product.getId()).isStatus());
+
+				structure.setData(product);
+				structure.setMessage("Product Updated Successfully");
+				structure.setStatus(HttpStatus.CREATED.value());
+//				session.setAttribute("merchant", );
+				productRepository.save(product);
+				return new ResponseEntity<>(structure, HttpStatus.CREATED);
+			}
+		}
+	}
+
 }
