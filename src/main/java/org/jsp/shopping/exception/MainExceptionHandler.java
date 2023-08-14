@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import jakarta.validation.ConstraintViolationException;
+
 @ControllerAdvice
 public class MainExceptionHandler {
 	@ExceptionHandler(ArithmeticException.class)
@@ -39,7 +41,7 @@ public class MainExceptionHandler {
 
 		return new ResponseEntity<ResponseStructure<String>>(structure, HttpStatus.BAD_REQUEST);
 	}
-	
+
 	@ExceptionHandler(NullPointerException.class)
 	public ResponseEntity<ResponseStructure<String>> handle(NullPointerException exception) {
 		ResponseStructure<String> structure = new ResponseStructure<>();
@@ -47,6 +49,15 @@ public class MainExceptionHandler {
 		structure.setMessage("Null");
 		structure.setData(exception.getMessage());
 
+		return new ResponseEntity<ResponseStructure<String>>(structure, HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler(ConstraintViolationException.class)
+	public ResponseEntity<ResponseStructure<String>> handle(ConstraintViolationException exception) {
+		ResponseStructure<String> structure = new ResponseStructure<>();
+		structure.setStatus(HttpStatus.BAD_REQUEST.value());
+		structure.setMessage("Null");
+		structure.setData(exception.getMessage());
 		return new ResponseEntity<ResponseStructure<String>>(structure, HttpStatus.BAD_REQUEST);
 	}
 }
