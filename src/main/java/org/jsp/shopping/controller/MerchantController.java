@@ -64,6 +64,17 @@ public class MerchantController {
 		return merhantService_implementation.resendOtp(email);
 	}
 
+	@PostMapping("/forgotpassword")
+	public ResponseEntity<ResponseStructure<Merchant>> sendForgotOtp(@RequestParam String email) {
+		return merhantService_implementation.sendForgotOtp(email);
+	}
+
+	@PostMapping("/forgot-otp/{email}")
+	public ResponseEntity<ResponseStructure<Merchant>> submitForgotOtp(@PathVariable String email,
+			@RequestParam int otp) {
+		return merhantService_implementation.submitForgotOtp(email, otp);
+	}
+
 	@PostMapping("/login")
 	public ResponseEntity<ResponseStructure<Merchant>> login(@RequestParam String email, @RequestParam String password,
 			HttpSession session, HttpServletResponse response) {
@@ -94,5 +105,10 @@ public class MerchantController {
 	@PostMapping("/product-update/{id}")
 	public ResponseEntity<ResponseStructure<Product>> updateProdut(@RequestBody Product product, HttpSession session) {
 		return merhantService_implementation.updateProduct(product, session);
+	}
+	
+	@GetMapping("/resend-forgot-otp/{email}")
+	public ResponseEntity<ResponseStructure<Merchant>> resendForgotOtp(@PathVariable String email){
+		return merhantService_implementation.resendForgotOtp(email);
 	}
 }
