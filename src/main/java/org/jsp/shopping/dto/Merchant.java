@@ -32,16 +32,20 @@ public class Merchant {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
 
+	@Email(message = "Invalid email format")
 	@NotBlank(message = "Name must not be blank.")
 	private String name;
 
 	@Email(message = "Please provide a valid email address.")
+	@NotNull(message = "email is required")
 	private String email;
 
 	@Digits(integer = 10, fraction = 0, message = "Mobile number should have exactly 10 digits.")
+	@NotNull(message = "Mobile Number is required")
 	private long mobile;
 
 	@Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$", message = "Password must be at least 8 characters long and contain at least one lowercase letter, one uppercase letter, one digit, and one special character.")
+	@NotNull(message = "Password is required")
 	private String password;
 
 	@NotNull(message = "Date of birth must not be null.")
@@ -53,10 +57,8 @@ public class Merchant {
 	@NotBlank(message = "Address must not be blank.")
 	private String address;
 
-//	@Digits(integer = 6, fraction = 0, message = "OTP should have exactly 6 digits.")
 	private int otp;
 
-//	@AssertTrue(message = "Status must be true.")
 	private boolean status;
 
 	@Lob

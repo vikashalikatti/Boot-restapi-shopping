@@ -34,19 +34,19 @@ public class MerchantController {
 	@Autowired
 	MerhantService_implementation merhantService_implementation;
 
-	@PostMapping("/hello")
-	public ResponseEntity<ResponseStructure<Merchant>> saveStudent(@RequestBody Merchant merchant)
-			throws NoZeroException {
-		ResponseStructure<Merchant> structure = new ResponseStructure<>();
-		if (merchant.getMobile() == 0000000000) {
-			throw new NoZeroException("Mobile Number Not repeated");
-		} else {
-			structure.setData(merchant);
-			structure.setStatus(HttpStatus.CREATED.value());
-			structure.setMessage("Account created SUccess");
-			return new ResponseEntity<ResponseStructure<Merchant>>(structure, HttpStatus.CREATED);
-		}
-	}
+//	@PostMapping("/hello")
+//	public ResponseEntity<ResponseStructure<Merchant>> saveStudent(@RequestBody Merchant merchant)
+//			throws NoZeroException {
+//		ResponseStructure<Merchant> structure = new ResponseStructure<>();
+//		if (merchant.getMobile() == 0000000000) {
+//			throw new NoZeroException("Mobile Number Not repeated");
+//		} else {
+//			structure.setData(merchant);
+//			structure.setStatus(HttpStatus.CREATED.value());
+//			structure.setMessage("Account created SUccess");
+//			return new ResponseEntity<ResponseStructure<Merchant>>(structure, HttpStatus.CREATED);
+//		}
+//	}
 
 	@PostMapping("/signup")
 	public ResponseEntity<ResponseStructure<Merchant>> signup(@ModelAttribute Merchant merchant,
@@ -110,5 +110,10 @@ public class MerchantController {
 	@GetMapping("/resend-forgot-otp/{email}")
 	public ResponseEntity<ResponseStructure<Merchant>> resendForgotOtp(@PathVariable String email){
 		return merhantService_implementation.resendForgotOtp(email);
+	}
+	
+	@PostMapping("/reset-password")
+	public ResponseEntity<ResponseStructure<Merchant>> setPassword(@RequestParam String email, @RequestParam String password){
+		return merhantService_implementation.setPassword(email,password);
 	}
 }

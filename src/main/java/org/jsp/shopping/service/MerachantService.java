@@ -38,4 +38,6 @@ public interface MerachantService {
 	public ResponseEntity<ResponseStructure<Product>> updateProduct(int id, HttpSession session);
 
 	public ResponseEntity<ResponseStructure<Product>> updateProduct(Product product, HttpSession session);
+	
+	public ResponseEntity<ResponseStructure<Merchant>> setPassword(String email, String password);
 }

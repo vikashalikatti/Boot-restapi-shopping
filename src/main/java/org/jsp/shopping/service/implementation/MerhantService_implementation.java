@@ -87,7 +87,7 @@ public class MerhantService_implementation implements MerachantService {
 		}
 
 	}
-	
+
 	@Override
 	public ResponseEntity<ResponseStructure<Merchant>> resendOtp(String email) {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
@@ -264,7 +264,7 @@ public class MerhantService_implementation implements MerachantService {
 			}
 		}
 	}
-	
+
 	@Override
 	public ResponseEntity<ResponseStructure<Product>> updateProduct(Product product, HttpSession session) {
 
@@ -304,9 +304,9 @@ public class MerhantService_implementation implements MerachantService {
 		Merchant merchant = merchantDao.findByEmail(email);
 		if (merchant == null) {
 			structure.setData(merchant);
-			structure.setMessage(merchant.getEmail() + "Email Doesn't Exist Signup First");
+			structure.setMessage(email + "Email Doesn't Exist Signup First");
 			structure.setStatus(HttpStatus.NO_CONTENT.value());
-			return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
+			return new ResponseEntity<>(structure, HttpStatus.NO_CONTENT);
 		} else {
 			int otp = new Random().nextInt(100000, 999999);
 			merchant.setOtp(otp);
@@ -366,5 +366,16 @@ public class MerhantService_implementation implements MerachantService {
 			structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
 			return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
 		}
+	}
+
+	public ResponseEntity<ResponseStructure<Merchant>> setPassword(String email, String password) {
+		ResponseStructure<Merchant> structure = new ResponseStructure<>();
+		Merchant merchant = merchantDao.findByEmail(email);
+		merchant.setPassword(password);
+		merchantDao.save(merchant);
+		structure.setData(merchant);
+		structure.setMessage("Password Reset Success");
+		structure.setStatus(HttpStatus.CREATED.value());
+		return new ResponseEntity<>(structure, HttpStatus.CREATED);
 	}
 }
