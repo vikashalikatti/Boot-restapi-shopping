@@ -259,4 +259,49 @@ public class CustomerService_implementation implements CustomerService {
 			}
 		}
 	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<List<Item>>> removeFromCart(HttpSession session, int id) {
+		Customer customer = (Customer) session.getAttribute("customer");
+		ResponseStructure<List<Item>> structure = new ResponseStructure<>();
+		if (customer == null) {
+			structure.setData(null);
+			structure.setMessage("Logain Again");
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+		} else {
+			List<Item> items = customer.getShoppingCart().getItems();
+			Item item = null;
+			boolean flag = false;
+			for (Item item1 : items) {
+				if (item1.getId() == id) {
+					item = item1;
+					if (item1.getQuantity() > 1) {
+						item1.setPrice(item1.getPrice() - (item1.getPrice() / item1.getQuantity()));
+						item1.setQuantity(item1.getQuantity() - 1);
+						break;
+					} else {
+						flag = true;
+						break;
+					}
+				}
+
+			}
+			if (flag) {
+				items.remove(item);
+			}
+
+			Product product = productRepository.findByName(item.getName());
+			product.setStock(product.getStock() + 1);
+			productRepository.save(product);
+
+			session.removeAttribute("customer");
+			session.setAttribute("customer", customerRepository.save(customer));
+
+			structure.setData(items);
+			structure.setMessage("Product Removed from Cart Success");
+			structure.setStatus(HttpStatus.OK.value());
+			return new ResponseEntity<>(structure, HttpStatus.FOUND);
+		}
+	}
 }

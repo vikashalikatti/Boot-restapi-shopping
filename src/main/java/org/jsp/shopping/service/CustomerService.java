@@ -24,4 +24,6 @@ public interface CustomerService {
 
 	ResponseEntity<ResponseStructure<List<Item>>> viewCart(HttpSession session);
 
+	ResponseEntity<ResponseStructure<List<Item>>> removeFromCart(HttpSession session, int id);
+
 }
