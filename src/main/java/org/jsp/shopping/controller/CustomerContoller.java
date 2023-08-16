@@ -62,5 +62,7 @@ public class CustomerContoller {
 	public ResponseEntity<ResponseStructure<List<Item>>> removeFromCart(HttpSession session, @PathVariable int id) {
 		return customerService.removeFromCart(session, id);
 	}
+	
+	
 
 }
