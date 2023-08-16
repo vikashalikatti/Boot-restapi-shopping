@@ -5,6 +5,7 @@ import java.util.List;
 import org.jsp.shopping.dto.Admin;
 import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Merchant;
+import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
 import org.jsp.shopping.helper.ResponseStructure;
 import org.jsp.shopping.service.AdminService;
@@ -44,15 +45,25 @@ public class Admin_Contoller {
 	public ResponseEntity<ResponseStructure<List<Product>>> changeStatus(@PathVariable int id, HttpSession session) {
 		return adminService.changeStatus(id, session);
 	}
-	
+
 	@GetMapping("/view-all-merchants")
-	public ResponseEntity<ResponseStructure<List<Merchant>>> viewallmerchant(HttpSession session){
+	public ResponseEntity<ResponseStructure<List<Merchant>>> viewallmerchant(HttpSession session) {
 		return adminService.viewallmerchant(session);
 	}
-	
+
 	@GetMapping("/view-all-customers")
-	public ResponseEntity<ResponseStructure<List<Customer>>> viewallcustomer(HttpSession session){
+	public ResponseEntity<ResponseStructure<List<Customer>>> viewallcustomer(HttpSession session) {
 		return adminService.viewallcustomer(session);
 	}
+
+	@PostMapping("/payment-add")
+	public ResponseEntity<ResponseStructure<Payment>> addpayment(HttpSession session, Payment payment) {
+		return adminService.addpayment(session, payment);
+	}
 	
+	@GetMapping("/view-all-payment")
+	public ResponseEntity<ResponseStructure<List<Payment>>> viewallPayment(HttpSession session){
+		return adminService.viewallPayment(session);
+	}
+
 }

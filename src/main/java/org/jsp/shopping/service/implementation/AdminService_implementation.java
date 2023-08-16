@@ -3,12 +3,14 @@ package org.jsp.shopping.service.implementation;
 import java.util.List;
 
 import org.jsp.shopping.Repository.Admin_Repository;
-import org.jsp.shopping.Repository.CustomerRepoditory;
+import org.jsp.shopping.Repository.CustomerRepository;
 import org.jsp.shopping.Repository.MerchantRepository;
+import org.jsp.shopping.Repository.PaymentRepository;
 import org.jsp.shopping.Repository.ProductRepository;
 import org.jsp.shopping.dto.Admin;
 import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Merchant;
+import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
 import org.jsp.shopping.helper.ResponseStructure;
 import org.jsp.shopping.service.AdminService;
@@ -30,9 +32,12 @@ public class AdminService_implementation implements AdminService {
 
 	@Autowired
 	MerchantRepository merchantRepository;
-	
+
 	@Autowired
-	CustomerRepoditory customerRepoditory;
+	CustomerRepository customerRepository;
+
+	@Autowired
+	PaymentRepository paymentRepository;
 
 	@Override
 	public ResponseEntity<ResponseStructure<Admin>> createAdmin(Admin admin) {
@@ -167,7 +172,7 @@ public class AdminService_implementation implements AdminService {
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			List<Customer> customers  = customerRepoditory.findAll();
+			List<Customer> customers = customerRepository.findAll();
 			if (customers.isEmpty()) {
 				structure.setData(null);
 				structure.setMessage("No Customers Data");
@@ -179,6 +184,48 @@ public class AdminService_implementation implements AdminService {
 				structure.setStatus(HttpStatus.FOUND.value());
 				return new ResponseEntity<>(structure, HttpStatus.FOUND);
 			}
+		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<Payment>> addpayment(HttpSession session, Payment payment) {
+		Payment payment2 = paymentRepository.findByName(payment.getName());
+		ResponseStructure<Payment> structure = new ResponseStructure<>();
+		if (session.getAttribute("admin") == null) {
+			structure.setData(null);
+			structure.setMessage("Login Again");
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+		} else {
+			if (payment2 == null) {
+				paymentRepository.save(payment);
+				structure.setData(payment);
+				structure.setMessage("Payment method added succesfully");
+				structure.setStatus(HttpStatus.CREATED.value());
+				return new ResponseEntity<>(structure, HttpStatus.CREATED);
+			} else {
+				structure.setData(null);
+				structure.setMessage("payment Method Already Exits");
+				structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
+				return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
+			}
+		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<List<Payment>>> viewallPayment(HttpSession session) {
+		ResponseStructure<List<Payment>> structure = new ResponseStructure<>();
+		List<Payment> payment = paymentRepository.findAll();
+		if (session.getAttribute("admin") == null) {
+			structure.setData(null);
+			structure.setMessage("Login Again");
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+		} else {
+			structure.setData(payment);
+			structure.setMessage("All Payment Method");
+			structure.setStatus(HttpStatus.FOUND.value());
+			return new ResponseEntity<>(structure, HttpStatus.FOUND);
 		}
 	}
 }
