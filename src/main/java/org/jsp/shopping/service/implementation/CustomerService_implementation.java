@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.json.JSONObject;
 import org.jsp.shopping.Repository.CustomerRepository;
 import org.jsp.shopping.Repository.PaymentRepository;
 import org.jsp.shopping.Repository.ProductRepository;
@@ -15,6 +16,7 @@ import org.jsp.shopping.dto.Item;
 import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
 import org.jsp.shopping.dto.ShoppingCart;
+import org.jsp.shopping.dto.ShoppingOrder;
 import org.jsp.shopping.dto.Wishlist;
 import org.jsp.shopping.helper.ResponseStructure;
 import org.jsp.shopping.helper.SendMail;
@@ -23,6 +25,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import com.razorpay.Order;
+import com.razorpay.RazorpayClient;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -528,5 +534,177 @@ public class CustomerService_implementation implements CustomerService {
 				return new ResponseEntity<>(structure, HttpStatus.ALREADY_REPORTED);
 			}
 		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<Customer>> checkAddress(HttpSession session, int pid) {
+
+		Customer customer = (Customer) session.getAttribute("customer");
+		ResponseStructure<Customer> structure = new ResponseStructure<>();
+		if (customer == null) {
+			structure.setData(null);
+			structure.setMessage("Logain Again");
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+		} else {
+			structure.setData(customer);
+			structure.setMessage("procced for payment");
+			structure.setStatus(HttpStatus.OK.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+		}
+
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<List<ShoppingOrder>>> viewOrders(HttpSession session) {
+
+		Customer customer = (Customer) session.getAttribute("customer");
+		ResponseStructure<List<ShoppingOrder>> structure = new ResponseStructure<>();
+		if (customer == null) {
+			structure.setData(null);
+			structure.setMessage("Logain Again");
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+		} else {
+			List<ShoppingOrder> list = customer.getOrders();
+			if (list == null || list.isEmpty()) {
+				structure.setData(null);
+				structure.setMessage("No Orders Yet");
+				structure.setStatus(HttpStatus.OK.value());
+				return new ResponseEntity<>(structure, HttpStatus.OK);
+			} else {
+				structure.setData(list);
+				structure.setMessage("Your Order");
+				structure.setStatus(HttpStatus.CREATED.value());
+				return new ResponseEntity<>(structure, HttpStatus.CREATED);
+			}
+		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(HttpSession session, @RequestParam int pid,
+			@RequestParam String address) {
+
+		Customer customer = (Customer) session.getAttribute("customer");
+		ResponseStructure<ShoppingOrder> structure = new ResponseStructure<>();
+		if (customer == null) {
+			structure.setData(null);
+			structure.setMessage("Please log in to view Wishlist");
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+		} else {
+			Payment payment = paymentRepository.findById(pid).orElse(null);
+			ShoppingOrder order = new ShoppingOrder();
+			order.setAddress(address);
+			order.setPaymentMode(payment.getName());
+			order.setDeliveryDate(LocalDate.now().plusDays(3));
+			ShoppingCart cart = customer.getShoppingCart();
+
+			if (cart == null || cart.getItems() == null || cart.getItems().isEmpty()) {
+				structure.setData(null);
+				structure.setMessage("Please add items to your cart");
+				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+			}
+
+			double total = 0;
+			for (Item item : cart.getItems()) {
+				total += item.getPrice();
+			}
+
+			order.setTotalPrice(total);
+			order.setItems(cart.getItems());
+
+			if (payment.getName().equalsIgnoreCase("RazorPay")) {
+				try {
+					JSONObject object = new JSONObject();
+					object.put("currency", "INR");
+					object.put("amount", total * 100);
+
+					RazorpayClient client = new RazorpayClient();
+					Order razorpayOrder = client.orders.create(object);
+
+					order.setCurrency("INR");
+					order.setOrderId(razorpayOrder.get("id"));
+
+					structure.setMessage("Order created successfully");
+					structure.setData(order);
+					structure.setStatus(HttpStatus.CREATED.value());
+					return new ResponseEntity<>(structure, HttpStatus.CREATED);
+				} catch (Exception e) {
+					e.printStackTrace();
+					structure.setData(null);
+					structure.setMessage("Error processing payment");
+					structure.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+					return new ResponseEntity<>(structure, HttpStatus.INTERNAL_SERVER_ERROR);
+				}
+			} else {
+				structure.setMessage("Order created successfully");
+				structure.setData(order);
+				structure.setStatus(HttpStatus.CREATED.value());
+				return new ResponseEntity<>(structure, HttpStatus.CREATED);
+			}
+		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<Customer>> forgotLink(String email) {
+		Customer customer = customerRepository.findByEmail(email);
+		ResponseStructure<Customer> structure = new ResponseStructure<>();
+		if (customer == null) {
+			structure.setData(null);
+			structure.setMessage("Email dosen't exits");
+			structure.setStatus(HttpStatus.NOT_FOUND.value());
+			return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+		} else {
+			String token = "EKART" + new Random().nextInt(10000, 999999);
+			customer.setToken(token);
+			customerRepository.save(customer);
+			// logic for sending the mail
+			if (mail.sendResetLink(customer)) {
+				Customer customer2 = customerRepository.save(customer);
+				structure.setData(customer2);
+				structure.setMessage("Verification Link send to Email Succesfull");
+				structure.setStatus(HttpStatus.FOUND.value());
+				return new ResponseEntity<>(structure, HttpStatus.FOUND);
+			} else {
+				structure.setData(null);
+				structure.setMessage("Something went wrong");
+				structure.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+				return new ResponseEntity<>(structure, HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<Customer>> resetPassword(String email, String token) {
+		Customer customer = customerRepository.findByEmail(email);
+		ResponseStructure<Customer> structure = new ResponseStructure<>();
+		if (customer.getToken().equals(token)) {
+			customer.setStatus(true);
+			customer.setToken(null);
+			Customer customer2 = customerRepository.save(customer);
+			structure.setData(customer2);
+			structure.setMessage("Verified Succesfull");
+			structure.setStatus(HttpStatus.OK.value());
+			return new ResponseEntity<>(structure, HttpStatus.OK);
+		} else {
+			structure.setData(null);
+			structure.setMessage("Not Verified");
+			structure.setStatus(HttpStatus.BAD_REQUEST.value());
+			return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<Customer>> setpassword(String email, String password) {
+		Customer customer = customerRepository.findByEmail(email);
+		ResponseStructure<Customer> structure = new ResponseStructure<>();
+		customer.setPassword(password);
+		customerRepository.save(customer);
+		structure.setData(customer);
+		structure.setMessage("Password Set Success");
+		structure.setStatus(HttpStatus.OK.value());
+		return new ResponseEntity<>(structure, HttpStatus.OK);
 	}
 }

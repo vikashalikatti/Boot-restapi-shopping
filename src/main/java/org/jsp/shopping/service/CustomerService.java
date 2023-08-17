@@ -6,6 +6,7 @@ import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Item;
 import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
+import org.jsp.shopping.dto.ShoppingOrder;
 import org.jsp.shopping.dto.Wishlist;
 import org.jsp.shopping.helper.ResponseStructure;
 import org.springframework.http.ResponseEntity;
@@ -41,5 +42,17 @@ public interface CustomerService {
 	ResponseEntity<ResponseStructure<Wishlist>> deleteWishlist(int wid, HttpSession session);
 
 	ResponseEntity<ResponseStructure<List<Payment>>> checkPayment(HttpSession session);
+
+	ResponseEntity<ResponseStructure<Customer>> checkAddress(HttpSession session, int pid);
+
+	ResponseEntity<ResponseStructure<List<ShoppingOrder>>> viewOrders(HttpSession session);
+
+	ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(HttpSession session, int pid, String address);
+
+	ResponseEntity<ResponseStructure<Customer>> forgotLink(String email);
+
+	ResponseEntity<ResponseStructure<Customer>> resetPassword(String email, String token);
+
+	ResponseEntity<ResponseStructure<Customer>> setpassword(String email, String password);
 
 }

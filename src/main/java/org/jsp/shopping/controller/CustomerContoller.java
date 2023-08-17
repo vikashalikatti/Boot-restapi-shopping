@@ -6,11 +6,13 @@ import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Item;
 import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
+import org.jsp.shopping.dto.ShoppingOrder;
 import org.jsp.shopping.dto.Wishlist;
 import org.jsp.shopping.helper.ResponseStructure;
 import org.jsp.shopping.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -103,4 +105,35 @@ public class CustomerContoller {
 		return customerService.checkPayment(session);
 	}
 
+	@PostMapping("/placeorder")
+	public ResponseEntity<ResponseStructure<Customer>> checkAddress(HttpSession session, @RequestParam int pid) {
+		return customerService.checkAddress(session, pid);
+	}
+
+	@PostMapping("/sumbmitorder")
+	public ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(HttpSession session, @RequestParam int pid,
+			@RequestParam String address) {
+		return customerService.submitOrder(session, pid, address);
+	}
+
+	@GetMapping("/orders-view")
+	public ResponseEntity<ResponseStructure<List<ShoppingOrder>>> viewOrder(HttpSession session) {
+		return customerService.viewOrders(session);
+	}
+
+	@PostMapping("/forgotpasswordsss")
+	public ResponseEntity<ResponseStructure<Customer>> forgotLink(@RequestParam String email) {
+		return customerService.forgotLink(email);
+	}
+
+	@GetMapping("/reset-password/{email}/{token}")
+	public ResponseEntity<ResponseStructure<Customer>> resetPassword(@PathVariable String email,
+			@PathVariable String token) {
+		return customerService.resetPassword(email, token);
+	}
+	
+	@PostMapping("/reset-password")
+	public ResponseEntity<ResponseStructure<Customer>> setpassword(@RequestParam String email,@RequestParam String password) {
+		return customerService.setpassword(email,password);
+	}
 }
