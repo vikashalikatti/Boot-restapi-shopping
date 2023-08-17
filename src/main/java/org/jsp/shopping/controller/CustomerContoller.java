@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Item;
+import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
+import org.jsp.shopping.dto.Wishlist;
 import org.jsp.shopping.helper.ResponseStructure;
 import org.jsp.shopping.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +64,43 @@ public class CustomerContoller {
 	public ResponseEntity<ResponseStructure<List<Item>>> removeFromCart(HttpSession session, @PathVariable int id) {
 		return customerService.removeFromCart(session, id);
 	}
-	
-	
+
+	@PostMapping("/wishlist-create/{id}")
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> create_wishlist(HttpSession session, @PathVariable int id,
+			@RequestParam String name) {
+		return customerService.create_wishlist(session, id, name);
+	}
+
+	@GetMapping("/wishlist-view")
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> view_wishlist(HttpSession session) {
+		return customerService.view_wishlist(session);
+	}
+
+	@GetMapping("/wishlist/product-view/{id}")
+	public ResponseEntity<ResponseStructure<Wishlist>> viewWishlistProducts(@PathVariable int id, HttpSession session) {
+		return customerService.viewWishlistProducts(session, id);
+	}
+
+	@GetMapping("/wishlist-add/{wid}/{pid}")
+	public ResponseEntity<ResponseStructure<Wishlist>> addToWishList(@PathVariable int wid, @PathVariable int pid,
+			HttpSession session) {
+		return customerService.addToWishList(wid, pid, session);
+	}
+
+	@GetMapping("/wishlist-remove/{wid}/{pid}")
+	public ResponseEntity<ResponseStructure<Wishlist>> removeFromWishList(@PathVariable int wid, @PathVariable int pid,
+			HttpSession session) {
+		return customerService.removeFromWishList(wid, pid, session);
+	}
+
+	@GetMapping("/wishlist-delete/{wid}")
+	public ResponseEntity<ResponseStructure<Wishlist>> deleteWishlist(@PathVariable int wid, HttpSession session) {
+		return customerService.deleteWishlist(wid, session);
+	}
+
+	@GetMapping("/placeorder")
+	public ResponseEntity<ResponseStructure<List<Payment>>> checkPayment(HttpSession session) {
+		return customerService.checkPayment(session);
+	}
 
 }

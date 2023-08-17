@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Item;
+import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
+import org.jsp.shopping.dto.Wishlist;
 import org.jsp.shopping.helper.ResponseStructure;
 import org.springframework.http.ResponseEntity;
 
@@ -25,5 +27,19 @@ public interface CustomerService {
 	ResponseEntity<ResponseStructure<List<Item>>> viewCart(HttpSession session);
 
 	ResponseEntity<ResponseStructure<List<Item>>> removeFromCart(HttpSession session, int id);
+
+	ResponseEntity<ResponseStructure<List<Wishlist>>> create_wishlist(HttpSession session, int id, String name);
+
+	ResponseEntity<ResponseStructure<List<Wishlist>>> view_wishlist(HttpSession session);
+
+	ResponseEntity<ResponseStructure<Wishlist>> viewWishlistProducts(HttpSession session, int id);
+
+	ResponseEntity<ResponseStructure<Wishlist>> addToWishList(int wid, int pid, HttpSession session);
+
+	ResponseEntity<ResponseStructure<Wishlist>> removeFromWishList(int wid, int pid, HttpSession session);
+
+	ResponseEntity<ResponseStructure<Wishlist>> deleteWishlist(int wid, HttpSession session);
+
+	ResponseEntity<ResponseStructure<List<Payment>>> checkPayment(HttpSession session);
 
 }
