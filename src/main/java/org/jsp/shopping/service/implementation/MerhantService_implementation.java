@@ -16,6 +16,7 @@ import org.jsp.shopping.service.MerachantService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,13 +33,16 @@ public class MerhantService_implementation implements MerachantService {
 	@Autowired
 	ProductRepository productRepository;
 
+	@Autowired
+	BCryptPasswordEncoder encoder;
+
 	@Override
 	public ResponseEntity<ResponseStructure<Merchant>> signup(Merchant merchant, String date, MultipartFile pic)
 			throws IOException {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
 
 		merchant.setDob(LocalDate.parse(date));
-
+		merchant.setPassword(encoder.encode(merchant.getPassword()));
 		byte[] picture = new byte[pic.getInputStream().available()];
 		pic.getInputStream().read(picture);
 		merchant.setPicture(picture);
@@ -54,6 +58,7 @@ public class MerhantService_implementation implements MerachantService {
 		merchant.setOtp(otp);
 
 		if (mail.sendOtp(merchant)) {
+
 			Merchant merchant2 = merchantDao.save(merchant);
 			structure.setData(merchant2);
 			structure.setStatus(HttpStatus.CREATED.value());
@@ -119,10 +124,11 @@ public class MerhantService_implementation implements MerachantService {
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			if (merchant.getPassword().equals(password)) {
+			boolean passwordMatches = encoder.matches(password, merchant.getPassword());
+			if (passwordMatches) {
 				if (merchant.isStatus()) {
 					session.setAttribute("merchant", merchant);
-
+//					System.out.println(session.getId()+"----------------------------------------->");
 					structure.setData(merchant);
 					structure.setMessage("Login Success");
 					structure.setStatus(HttpStatus.CREATED.value());

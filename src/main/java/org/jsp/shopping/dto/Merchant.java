@@ -32,7 +32,6 @@ public class Merchant {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
 
-	@Email(message = "Invalid email format")
 	@NotBlank(message = "Name must not be blank.")
 	private String name;
 

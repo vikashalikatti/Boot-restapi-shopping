@@ -1,20 +1,16 @@
-//package org.jsp.shopping.configuration;
-//
-//import org.springframework.context.annotation.Bean;
-//import org.springframework.context.annotation.Configuration;
-//import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-//import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-//import org.springframework.security.core.userdetails.User;
-//import org.springframework.security.core.userdetails.UserDetails;
-//import org.springframework.security.core.userdetails.UserDetailsService;
-//import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-//import org.springframework.security.crypto.password.PasswordEncoder;
-//import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-//import org.springframework.security.web.SecurityFilterChain;
-//
-//@Configuration
-//@EnableWebSecurity
-//public class SecurityConfiguration {
+package org.jsp.shopping.configuration;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfiguration {
 //
 //	@Bean
 //	public UserDetailsService service() {
@@ -24,16 +20,31 @@
 //		return new InMemoryUserDetailsManager(userDetail1, userDetail2);
 //	}
 //
-//	@Bean
-//	public PasswordEncoder encoder() {
-//		return new BCryptPasswordEncoder();
-//	}
+	@Bean
+	public BCryptPasswordEncoder bCryptPasswordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+
 //
-//	@Bean
-//	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-//
+	@Bean
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
 //		http.authorizeHttpRequests(n -> n.anyRequest().permitAll());
 //		return http.build();
-//	}
+		http.cors()
+		.and()
+		.csrf().disable()
+		.authorizeRequests().requestMatchers("**")
+//		.antMatchers("/error","/auth","/authbytoken")
+		.permitAll()
+		.anyRequest().authenticated()
+		.and()
+//		.exceptionHandling().authenticationEntryPoint(unauthorizedHandler)
+//		.and()
+		.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+
+//		http.addFilterBefore(authenticationTokenFilterBean(), UsernamePasswordAuthenticationFilter.class)
+		return http.build();
+	}
 //
-//}
+}
