@@ -124,8 +124,7 @@ public class MerhantService_implementation implements MerachantService {
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			boolean passwordMatches = encoder.matches(password, merchant.getPassword());
-			if (passwordMatches) {
+			if (encoder.matches(password, merchant.getPassword())) {
 				if (merchant.isStatus()) {
 					session.setAttribute("merchant", merchant);
 //					System.out.println(session.getId()+"----------------------------------------->");

@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -31,19 +30,21 @@ public class SecurityConfiguration {
 
 //		http.authorizeHttpRequests(n -> n.anyRequest().permitAll());
 //		return http.build();
-		http.cors()
-		.and()
-		.csrf().disable()
-		.authorizeRequests().requestMatchers("**")
-//		.antMatchers("/error","/auth","/authbytoken")
-		.permitAll()
-		.anyRequest().authenticated()
-		.and()
-//		.exceptionHandling().authenticationEntryPoint(unauthorizedHandler)
+//		http.cors()
 //		.and()
-		.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-
-//		http.addFilterBefore(authenticationTokenFilterBean(), UsernamePasswordAuthenticationFilter.class)
+//		.csrf().disable()
+//		.authorizeRequests().requestMatchers("**")
+////		.antMatchers("/error","/auth","/authbytoken")
+//		.permitAll()
+//		.anyRequest().authenticated()
+//		.and()
+////		.exceptionHandling().authenticationEntryPoint(unauthorizedHandler)
+////		.and()
+//		.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+//
+////		http.addFilterBefore(authenticationTokenFilterBean(), UsernamePasswordAuthenticationFilter.class)
+//		return http.build();
+		http.cors().and().csrf().disable().authorizeRequests().requestMatchers("**").permitAll().anyRequest().authenticated();
 		return http.build();
 	}
 //

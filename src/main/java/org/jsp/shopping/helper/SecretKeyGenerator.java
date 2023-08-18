@@ -3,6 +3,10 @@ package org.jsp.shopping.helper;
 import java.security.SecureRandom;
 import java.util.Base64;
 
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
+
+@Component
 public class SecretKeyGenerator {
 	public String key() {
 		SecureRandom secureRandom = new SecureRandom();

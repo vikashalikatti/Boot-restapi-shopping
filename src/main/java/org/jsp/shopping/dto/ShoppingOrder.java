@@ -29,8 +29,11 @@ public class ShoppingOrder {
 	private String orderId;
 	private String transactionId;
 	private String currency;
+	private String payment_key;
+	private String company_name;
+	private String status;
 
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	@OneToMany
 	private List<Item> items;
 
 }

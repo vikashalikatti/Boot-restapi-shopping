@@ -10,6 +10,7 @@ import org.jsp.shopping.Repository.CustomerRepository;
 import org.jsp.shopping.Repository.PaymentRepository;
 import org.jsp.shopping.Repository.ProductRepository;
 import org.jsp.shopping.Repository.ShoppingCartRepository;
+import org.jsp.shopping.Repository.ShoppingOrderRepository;
 import org.jsp.shopping.Repository.WishlistRepository;
 import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Item;
@@ -18,12 +19,14 @@ import org.jsp.shopping.dto.Product;
 import org.jsp.shopping.dto.ShoppingCart;
 import org.jsp.shopping.dto.ShoppingOrder;
 import org.jsp.shopping.dto.Wishlist;
+import org.jsp.shopping.helper.JwtUtil;
 import org.jsp.shopping.helper.ResponseStructure;
 import org.jsp.shopping.helper.SendMail;
 import org.jsp.shopping.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -59,11 +62,21 @@ public class CustomerService_implementation implements CustomerService {
 	@Autowired
 	ShoppingCartRepository cartRepository;
 
+	@Autowired
+	BCryptPasswordEncoder encoder;
+	
+	@Autowired
+	JwtUtil jwtUtil;
+
+	
+	@Autowired
+	ShoppingOrderRepository shoppingOrderRepository;
 	@Override
 	public ResponseEntity<ResponseStructure<Customer>> signup(Customer customer, String date) {
 
 		ResponseStructure<Customer> structure = new ResponseStructure<>();
 		customer.setDob(LocalDate.parse(date));
+		customer.setPassword(encoder.encode(customer.getPassword()));
 		if (customerRepository.findByEmail(customer.getEmail()) != null
 				|| customerRepository.findByMobile(customer.getMobile()) != null) {
 
@@ -72,7 +85,11 @@ public class CustomerService_implementation implements CustomerService {
 			structure.setStatus(HttpStatus.ALREADY_REPORTED.value());
 			return new ResponseEntity<>(structure, HttpStatus.ALREADY_REPORTED);
 		}
-		String token = "EKART" + new Random().nextInt(10000, 999999);
+//		String token = "EKART" + new Random().nextInt(10000, 999999);
+		
+		String token = jwtUtil.generateJwtTokenForCustomer(customer);
+		System.out.println(token+"--------------------------------------------------->");
+
 		customer.setToken(token);
 
 		// logic for sending the mail
@@ -95,6 +112,8 @@ public class CustomerService_implementation implements CustomerService {
 	public ResponseEntity<ResponseStructure<Customer>> verify_link(String email, String token) {
 		ResponseStructure<Customer> structure = new ResponseStructure<>();
 		Customer customer = customerRepository.findByEmail(email);
+//		System.out.println(token + "---------------------------------->");
+//		System.out.println(customer.getToken() + "------------------------------>");
 		if (customer.getToken().equals(token)) {
 			customer.setStatus(true);
 			customer.setToken(null);
@@ -121,7 +140,7 @@ public class CustomerService_implementation implements CustomerService {
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			if (customer.getPassword().equals(password)) {
+			if (encoder.matches(password, customer.getPassword())) {
 				if (customer.isStatus()) {
 					session.setAttribute("customer", customer);
 
@@ -589,7 +608,7 @@ public class CustomerService_implementation implements CustomerService {
 		ResponseStructure<ShoppingOrder> structure = new ResponseStructure<>();
 		if (customer == null) {
 			structure.setData(null);
-			structure.setMessage("Please log in to view Wishlist");
+			structure.setMessage("Login Again");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
@@ -623,11 +642,13 @@ public class CustomerService_implementation implements CustomerService {
 
 					RazorpayClient client = new RazorpayClient();
 					Order razorpayOrder = client.orders.create(object);
-
+					order.setStatus(razorpayOrder.get("status"));
 					order.setCurrency("INR");
 					order.setOrderId(razorpayOrder.get("id"));
-
-					structure.setMessage("Order created successfully");
+					order.setPayment_key();
+					order.setCompany_name("E-Kart");
+					shoppingOrderRepository.save(order);
+					structure.setMessage("Order created successfully payment");
 					structure.setData(order);
 					structure.setStatus(HttpStatus.CREATED.value());
 					return new ResponseEntity<>(structure, HttpStatus.CREATED);
@@ -639,7 +660,7 @@ public class CustomerService_implementation implements CustomerService {
 					return new ResponseEntity<>(structure, HttpStatus.INTERNAL_SERVER_ERROR);
 				}
 			} else {
-				structure.setMessage("Order created successfully");
+				structure.setMessage("Order created successfully null");
 				structure.setData(order);
 				structure.setStatus(HttpStatus.CREATED.value());
 				return new ResponseEntity<>(structure, HttpStatus.CREATED);
@@ -700,7 +721,7 @@ public class CustomerService_implementation implements CustomerService {
 	public ResponseEntity<ResponseStructure<Customer>> setpassword(String email, String password) {
 		Customer customer = customerRepository.findByEmail(email);
 		ResponseStructure<Customer> structure = new ResponseStructure<>();
-		customer.setPassword(password);
+		customer.setPassword(encoder.encode(password));
 		customerRepository.save(customer);
 		structure.setData(customer);
 		structure.setMessage("Password Set Success");
