@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.razorpay.RazorpayException;
+
 import jakarta.servlet.http.HttpSession;
 
 @RestController
@@ -33,7 +35,7 @@ public class CustomerContoller {
 
 	@PostMapping("/signup")
 	public ResponseEntity<ResponseStructure<Customer>> signup(@ModelAttribute Customer customer,
-			@RequestParam String date) {
+			@RequestParam String date) throws Exception {
 		return customerService.signup(customer, date);
 	}
 
@@ -112,9 +114,9 @@ public class CustomerContoller {
 		return customerService.checkAddress(session, pid);
 	}
 
-	@PostMapping("/sumbmitorder")
+	@PostMapping("/submitorder")
 	public ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(HttpSession session, @RequestParam int pid,
-			@RequestParam String address) {
+			@RequestParam String address) throws RazorpayException {
 		return customerService.submitOrder(session, pid, address);
 	}
 
@@ -123,8 +125,8 @@ public class CustomerContoller {
 		return customerService.viewOrders(session);
 	}
 
-	@PostMapping("/forgotpasswordsss")
-	public ResponseEntity<ResponseStructure<Customer>> forgotLink(@RequestParam String email) {
+	@PostMapping("/forgotpassword")
+	public ResponseEntity<ResponseStructure<Customer>> forgotLink(@RequestParam String email) throws Exception {
 		return customerService.forgotLink(email);
 	}
 
@@ -133,9 +135,10 @@ public class CustomerContoller {
 			@PathVariable String token) {
 		return customerService.resetPassword(email, token);
 	}
-	
+
 	@PostMapping("/reset-password")
-	public ResponseEntity<ResponseStructure<Customer>> setpassword(@RequestParam String email,@RequestParam String password) {
-		return customerService.setpassword(email,password);
+	public ResponseEntity<ResponseStructure<Customer>> setpassword(@RequestParam String email,
+			@RequestParam String password) {
+		return customerService.setpassword(email, password);
 	}
 }

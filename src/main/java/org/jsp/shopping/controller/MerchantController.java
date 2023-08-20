@@ -5,11 +5,9 @@ import java.util.List;
 
 import org.jsp.shopping.dto.Merchant;
 import org.jsp.shopping.dto.Product;
-import org.jsp.shopping.exception.NoZeroException;
 import org.jsp.shopping.helper.ResponseStructure;
 import org.jsp.shopping.service.implementation.MerhantService_implementation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +21,10 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import freemarker.core.ParseException;
+import freemarker.template.MalformedTemplateNameException;
+import freemarker.template.TemplateException;
+import freemarker.template.TemplateNotFoundException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
@@ -52,7 +54,7 @@ public class MerchantController {
 
 	@PostMapping("/signup")
 	public ResponseEntity<ResponseStructure<Merchant>> signup(@ModelAttribute Merchant merchant,
-			@RequestParam String date, @RequestPart MultipartFile pic) throws IOException {
+			@RequestParam String date, @RequestPart MultipartFile pic) throws IOException, TemplateException {
 		return merhantService_implementation.signup(merchant, date, pic);
 	}
 
@@ -62,12 +64,16 @@ public class MerchantController {
 	}
 
 	@GetMapping("/resend-otp/{email}")
-	public ResponseEntity<ResponseStructure<Merchant>> resendOtp(@PathVariable String email) {
+	public ResponseEntity<ResponseStructure<Merchant>> resendOtp(@PathVariable String email)
+			throws TemplateNotFoundException, MalformedTemplateNameException, ParseException, IOException,
+			TemplateException {
 		return merhantService_implementation.resendOtp(email);
 	}
 
 	@PostMapping("/forgotpassword")
-	public ResponseEntity<ResponseStructure<Merchant>> sendForgotOtp(@RequestParam String email) {
+	public ResponseEntity<ResponseStructure<Merchant>> sendForgotOtp(@RequestParam String email)
+			throws TemplateNotFoundException, MalformedTemplateNameException, ParseException, IOException,
+			TemplateException {
 		return merhantService_implementation.sendForgotOtp(email);
 	}
 
@@ -108,14 +114,17 @@ public class MerchantController {
 	public ResponseEntity<ResponseStructure<Product>> updateProdut(@RequestBody Product product, HttpSession session) {
 		return merhantService_implementation.updateProduct(product, session);
 	}
-	
+
 	@GetMapping("/resend-forgot-otp/{email}")
-	public ResponseEntity<ResponseStructure<Merchant>> resendForgotOtp(@PathVariable String email){
+	public ResponseEntity<ResponseStructure<Merchant>> resendForgotOtp(@PathVariable String email)
+			throws TemplateNotFoundException, MalformedTemplateNameException, ParseException, IOException,
+			TemplateException {
 		return merhantService_implementation.resendForgotOtp(email);
 	}
-	
+
 	@PostMapping("/reset-password")
-	public ResponseEntity<ResponseStructure<Merchant>> setPassword(@RequestParam String email, @RequestParam String password){
-		return merhantService_implementation.setPassword(email,password);
+	public ResponseEntity<ResponseStructure<Merchant>> setPassword(@RequestParam String email,
+			@RequestParam String password) {
+		return merhantService_implementation.setPassword(email, password);
 	}
 }

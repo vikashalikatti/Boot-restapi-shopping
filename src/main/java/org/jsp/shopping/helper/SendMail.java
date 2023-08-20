@@ -1,12 +1,25 @@
 package org.jsp.shopping.helper;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Merchant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 
+import freemarker.core.ParseException;
+import freemarker.template.Configuration;
+import freemarker.template.MalformedTemplateNameException;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
+import freemarker.template.TemplateNotFoundException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
@@ -14,25 +27,39 @@ import jakarta.mail.internet.MimeMessage;
 public class SendMail {
 	@Autowired
 	JavaMailSender mailSender;
+	@Autowired
+	Configuration configuration;
 
-	public boolean sendOtp(Merchant merchant) {
+	public boolean sendOtp(Merchant merchant) throws TemplateNotFoundException, MalformedTemplateNameException,
+			ParseException, IOException, TemplateException {
 		MimeMessage mimeMessage = mailSender.createMimeMessage();
 		MimeMessageHelper helper = new MimeMessageHelper(mimeMessage);
 
 		try {
-			helper.setFrom("E-Market");
+			helper.setFrom("E-kart <gangsteryt111@gmail.com>");
 			helper.setTo(merchant.getEmail());
 			helper.setSubject("Verify Email for Account Creation");
 
-			String gender = null;
-			if (merchant.getGender().equals("male"))
-				gender = "Mr. ";
-			else
-				gender = "Ms. ";
+			Template template = configuration.getTemplate("merchant-template.ftl");
+			Map<String, Object> model = new HashMap<>();
+			model.put("merchant", merchant);
+			model.put("otp", merchant.getOtp());
+			String genderPrefix = "Mr.";
+			if ("female".equalsIgnoreCase(merchant.getGender())) {
+				genderPrefix = "Ms.";
+			} else {
+				genderPrefix = "Mr.";
+			}
+			model.put("genderPrefix", genderPrefix);
 
-			String content = "<h1>Hello " + gender + " " + merchant.getName() + ",<h1>"
-					+ "<h1>Thank you for showing interest in creating an account with us we look forward to collabrate enter the below otp to verify your account</h1>"
-					+ "<h1>OTP: " + merchant.getOtp();
+			LocalDateTime otpExpirationTime = LocalDateTime.now().plusMinutes(5);
+
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+			String formattedOTPExpirationTime = otpExpirationTime.format(formatter);
+			model.put("formattedOTPExpirationTime", formattedOTPExpirationTime);
+			System.out.println("Formatted OTP Expiration Time: " + formattedOTPExpirationTime);
+
+			String content = FreeMarkerTemplateUtils.processTemplateIntoString(template, model);
 
 			helper.setText(content, true);
 			mailSender.send(mimeMessage);
@@ -44,28 +71,40 @@ public class SendMail {
 
 	}
 
-	public boolean sendLink(Customer customer) {
-		MimeMessage message = mailSender.createMimeMessage();
-		MimeMessageHelper helper = new MimeMessageHelper(message);
+	public boolean sendLink(Customer customer) throws Exception {
+		MimeMessage mimeMessage = mailSender.createMimeMessage();
+		MimeMessageHelper helper = new MimeMessageHelper(mimeMessage);
 
 		try {
-			helper.setFrom("E-Market");
+			helper.setFrom("E-kart <gangsteryt111@gmail.com>");
 			helper.setTo(customer.getEmail());
-			helper.setSubject("Verify Your Email For Account Verifocation");
+			helper.setSubject("Verify Email for Account Creation");
 
-			String gender = null;
-			if (customer.getGender().equals("male"))
-				gender = "Mr. ";
-			else
-				gender = "Ms. ";
+			Template template = configuration.getTemplate("customer-sendLink.ftl");
+			Map<String, Object> model = new HashMap<>();
+			model.put("merchant", customer);
+//			model.put("otp", customer.getOtp());
+			String genderPrefix = "Mr.";
+			if ("female".equalsIgnoreCase(customer.getGender())) {
+				genderPrefix = "Ms.";
+			} else {
+				genderPrefix = "Mr.";
+			}
+			model.put("genderPrefix", genderPrefix);
+			String email = customer.getEmail();
+			model.put("email", email);
+			LocalDateTime otpExpirationTime = LocalDateTime.now().plusMinutes(5);
 
-			String content = "<h1>Hello " + gender + " " + customer.getName() + ",<h1>"
-					+ "<h1>Thank you for creating an account ,Click below to verify the your account</h1>"
-					+ "<h1>Link:</h1> <a href='http://localhost:8080/customer/verify-otp/" + customer.getEmail() + "/"
-					+ customer.getToken() + "'>Click Here</a>";
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+			String formattedOTPExpirationTime = otpExpirationTime.format(formatter);
+			model.put("formattedOTPExpirationTime", formattedOTPExpirationTime);
+			System.out.println("Formatted OTP Expiration Time: " + formattedOTPExpirationTime);
+			String token = customer.getToken();
+			model.put("token", token);
+			String content = FreeMarkerTemplateUtils.processTemplateIntoString(template, model);
 
 			helper.setText(content, true);
-			mailSender.send(message);
+			mailSender.send(mimeMessage);
 			return true;
 
 		} catch (MessagingException e) {
@@ -74,27 +113,40 @@ public class SendMail {
 		}
 	}
 
-	public boolean sendResetLink(Customer customer) {
-		MimeMessage message = mailSender.createMimeMessage();
-		MimeMessageHelper helper = new MimeMessageHelper(message);
+	public boolean sendResetLink(Customer customer) throws Exception {
+		MimeMessage mimeMessage = mailSender.createMimeMessage();
+		MimeMessageHelper helper = new MimeMessageHelper(mimeMessage);
 
 		try {
-			helper.setFrom("E-Market");
+			helper.setFrom("E-kart <gangsteryt111@gmail.com>");
 			helper.setTo(customer.getEmail());
-			helper.setSubject("Reset Your Password");
-			String gender = null;
-			if (customer.getGender().equals("male"))
-				gender = "Mr. ";
-			else
-				gender = "Ms. ";
+			helper.setSubject("Verify Email for Account Creation");
 
-			String content = "<h1>Hello " + gender + " " + customer.getName() + ",<h1>"
-					+ "<h1>Thank you for creating an account ,Click below to verify the your account</h1>"
-					+ "<h1>Link:</h1> <a href='http://localhost:8080/customer/reset-password/" + customer.getEmail()
-					+ "/" + customer.getToken() + "'>Click Here</a>";
+			Template template = configuration.getTemplate("customer-sendLink-rest.ftl");
+			Map<String, Object> model = new HashMap<>();
+			model.put("customer", customer);
+//			model.put("otp", customer.getOtp());
+			String genderPrefix = "Mr.";
+			if ("female".equalsIgnoreCase(customer.getGender())) {
+				genderPrefix = "Ms.";
+			} else {
+				genderPrefix = "Mr.";
+			}
+			model.put("genderPrefix", genderPrefix);
+			String email = customer.getEmail();
+			model.put("email", email);
+			LocalDateTime otpExpirationTime = LocalDateTime.now().plusMinutes(5);
+
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+			String formattedOTPExpirationTime = otpExpirationTime.format(formatter);
+			model.put("formattedOTPExpirationTime", formattedOTPExpirationTime);
+			System.out.println("Formatted OTP Expiration Time: " + formattedOTPExpirationTime);
+			String token = customer.getToken();
+			model.put("token", token);
+			String content = FreeMarkerTemplateUtils.processTemplateIntoString(template, model);
 
 			helper.setText(content, true);
-			mailSender.send(message);
+			mailSender.send(mimeMessage);
 			return true;
 
 		} catch (MessagingException e) {

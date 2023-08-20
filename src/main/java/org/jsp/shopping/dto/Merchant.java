@@ -1,6 +1,7 @@
 package org.jsp.shopping.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
@@ -66,4 +67,6 @@ public class Merchant {
 
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	List<Product> products;
+
+	private LocalDateTime otpGeneratedTime;
 }

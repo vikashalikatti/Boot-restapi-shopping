@@ -1,7 +1,9 @@
 package org.jsp.shopping.service.implementation;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -20,6 +22,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import freemarker.core.ParseException;
+import freemarker.template.MalformedTemplateNameException;
+import freemarker.template.TemplateException;
+import freemarker.template.TemplateNotFoundException;
 import jakarta.servlet.http.HttpSession;
 
 @Service
@@ -38,7 +44,7 @@ public class MerhantService_implementation implements MerachantService {
 
 	@Override
 	public ResponseEntity<ResponseStructure<Merchant>> signup(Merchant merchant, String date, MultipartFile pic)
-			throws IOException {
+			throws IOException, TemplateException {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
 
 		merchant.setDob(LocalDate.parse(date));
@@ -56,6 +62,7 @@ public class MerhantService_implementation implements MerachantService {
 
 		int otp = new Random().nextInt(100000, 999999);
 		merchant.setOtp(otp);
+		merchant.setOtpGeneratedTime(LocalDateTime.now());
 
 		if (mail.sendOtp(merchant)) {
 
@@ -76,14 +83,25 @@ public class MerhantService_implementation implements MerachantService {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
 		Merchant merchant = merchantDao.findByEmail(email);
 //		System.out.println(merchant+"------------------------------------------------");
-		if (merchant.getOtp() == otp) {
-			merchant.setStatus(true);
-			merchant.setOtp(0);
-			merchantDao.save(merchant);
-			structure.setData(merchant);
-			structure.setStatus(HttpStatus.CREATED.value());
-			structure.setMessage("Otp Verified Successfully");
-			return new ResponseEntity<>(structure, HttpStatus.CREATED);
+		if (merchant != null && merchant.getOtp() == otp) {
+			LocalDateTime otpGeneratedTime = merchant.getOtpGeneratedTime();
+			LocalDateTime currentTime = LocalDateTime.now();
+			Duration duration = Duration.between(otpGeneratedTime, currentTime);
+
+			if (duration.toMinutes() <= 5) {
+				merchant.setStatus(true);
+				merchant.setOtp(0);
+				merchantDao.save(merchant);
+				structure.setData(merchant);
+				structure.setStatus(HttpStatus.OK.value());
+				structure.setMessage("OTP Verified Successfully");
+				return new ResponseEntity<>(structure, HttpStatus.OK);
+			} else {
+				structure.setData(null);
+				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+				structure.setMessage("OTP has expired.");
+				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+			}
 		} else {
 			structure.setData(null);
 			structure.setMessage("Otp Not Verified Sucessfully");
@@ -94,24 +112,32 @@ public class MerhantService_implementation implements MerachantService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Merchant>> resendOtp(String email) {
+	public ResponseEntity<ResponseStructure<Merchant>> resendOtp(String email) throws TemplateNotFoundException, MalformedTemplateNameException, ParseException, IOException, TemplateException {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
 		Merchant merchant = merchantDao.findByEmail(email);
-		int otp = new Random().nextInt(100000, 999999);
-		merchant.setOtp(otp);
 
-		if (mail.sendOtp(merchant)) {
-			Merchant merchant2 = merchantDao.save(merchant);
-			structure.setMessage("Successfully resend OTP");
-			structure.setData(merchant2);
-			structure.setStatus(HttpStatus.CREATED.value());
-			return new ResponseEntity<>(structure, HttpStatus.CREATED);
+		if (merchant != null) {
+			int otp = new Random().nextInt(100000, 999999);
+			merchant.setOtp(otp);
+			merchant.setOtpGeneratedTime(LocalDateTime.now()); // Store OTP generation time
+
+			if (mail.sendOtp(merchant)) {
+				Merchant merchant2 = merchantDao.save(merchant);
+				structure.setMessage("Successfully resend OTP");
+				structure.setData(merchant2);
+				structure.setStatus(HttpStatus.OK.value());
+			} else {
+				structure.setData(null);
+				structure.setMessage("Something went Wrong, Check email and try again");
+				structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
+			}
 		} else {
 			structure.setData(null);
-			structure.setMessage("Something went Wrong, Check email and try again");
-			structure.setStatus(HttpStatus.BAD_REQUEST.value());
-			return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+			structure.setMessage("Merchant not found");
+			structure.setStatus(HttpStatus.NOT_FOUND.value());
 		}
+
+		return new ResponseEntity<>(structure, HttpStatus.OK);
 	}
 
 	@Override
@@ -304,23 +330,25 @@ public class MerhantService_implementation implements MerachantService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Merchant>> sendForgotOtp(String email) {
+	public ResponseEntity<ResponseStructure<Merchant>> sendForgotOtp(String email) throws TemplateNotFoundException, MalformedTemplateNameException, ParseException, IOException, TemplateException {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
 		Merchant merchant = merchantDao.findByEmail(email);
+
 		if (merchant == null) {
 			structure.setData(merchant);
-			structure.setMessage(email + "Email Doesn't Exist Signup First");
+			structure.setMessage(email + " Email Doesn't Exist. Signup First");
 			structure.setStatus(HttpStatus.NO_CONTENT.value());
 			return new ResponseEntity<>(structure, HttpStatus.NO_CONTENT);
 		} else {
 			int otp = new Random().nextInt(100000, 999999);
 			merchant.setOtp(otp);
+			merchant.setOtpGeneratedTime(LocalDateTime.now());
 
 			if (mail.sendOtp(merchant)) {
 				Merchant merchant2 = merchantDao.save(merchant);
 				structure.setData(merchant2);
 				structure.setStatus(HttpStatus.OK.value());
-				structure.setMessage(merchant2.getEmail() + "Otp Sent Success");
+				structure.setMessage(merchant2.getEmail() + " Otp Sent Successfully");
 				return new ResponseEntity<>(structure, HttpStatus.OK);
 			} else {
 				structure.setData(null);
@@ -329,48 +357,66 @@ public class MerhantService_implementation implements MerachantService {
 				return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
 			}
 		}
-
 	}
 
 	@Override
 	public ResponseEntity<ResponseStructure<Merchant>> submitForgotOtp(String email, int otp) {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
 		Merchant merchant = merchantDao.findByEmail(email);
-		if (merchant.getOtp() == otp) {
-			merchant.setStatus(true);
-			merchant.setOtp(0);
-			merchantDao.save(merchant);
-			structure.setData(merchant);
-			structure.setMessage("Account Verified Successfully");
-			structure.setStatus(HttpStatus.ACCEPTED.value());
-			return new ResponseEntity<>(structure, HttpStatus.ACCEPTED);
+
+		if (merchant != null && merchant.getOtp() == otp) {
+			LocalDateTime otpGeneratedTime = merchant.getOtpGeneratedTime();
+			LocalDateTime currentTime = LocalDateTime.now();
+			Duration duration = Duration.between(otpGeneratedTime, currentTime);
+
+			if (duration.toMinutes() <= 5) {
+				merchant.setStatus(true);
+				merchant.setOtp(0);
+				merchantDao.save(merchant);
+				structure.setData(merchant);
+				structure.setMessage("Account Verified Successfully");
+				structure.setStatus(HttpStatus.ACCEPTED.value());
+			} else {
+				structure.setData(null);
+				structure.setMessage("OTP has expired.");
+				structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
+			}
 		} else {
 			structure.setData(null);
 			structure.setMessage("Incorrect OTP");
 			structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
-			return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
 		}
+
+		return new ResponseEntity<>(structure, HttpStatus.OK);
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Merchant>> resendForgotOtp(String email) {
+	public ResponseEntity<ResponseStructure<Merchant>> resendForgotOtp(String email) throws TemplateNotFoundException, MalformedTemplateNameException, ParseException, IOException, TemplateException {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
 		Merchant merchant = merchantDao.findByEmail(email);
-		int otp = new Random().nextInt(100000, 999999);
-		merchant.setOtp(otp);
 
-		if (mail.sendOtp(merchant)) {
-			Merchant merchant2 = merchantDao.save(merchant);
-			structure.setData(merchant2);
-			structure.setMessage("Otp resend Success");
-			structure.setStatus(HttpStatus.ACCEPTED.value());
-			return new ResponseEntity<>(structure, HttpStatus.ACCEPTED);
+		if (merchant != null) {
+			int otp = new Random().nextInt(100000, 999999);
+			merchant.setOtp(otp);
+			merchant.setOtpGeneratedTime(LocalDateTime.now());
+
+			if (mail.sendOtp(merchant)) {
+				Merchant merchant2 = merchantDao.save(merchant);
+				structure.setData(merchant2);
+				structure.setMessage("Otp Resend Success");
+				structure.setStatus(HttpStatus.ACCEPTED.value());
+			} else {
+				structure.setData(null);
+				structure.setMessage("Something went Wrong, Check email and try again");
+				structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
+			}
 		} else {
 			structure.setData(null);
-			structure.setMessage("Something went Wrong, Check email and try again");
-			structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
-			return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
+			structure.setMessage(email + " Email Doesn't Exist");
+			structure.setStatus(HttpStatus.NO_CONTENT.value());
 		}
+
+		return new ResponseEntity<>(structure, HttpStatus.OK);
 	}
 
 	public ResponseEntity<ResponseStructure<Merchant>> setPassword(String email, String password) {

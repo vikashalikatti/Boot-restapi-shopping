@@ -44,7 +44,7 @@ public class SecurityConfiguration {
 //
 ////		http.addFilterBefore(authenticationTokenFilterBean(), UsernamePasswordAuthenticationFilter.class)
 //		return http.build();
-		http.cors().and().csrf().disable().authorizeRequests().requestMatchers("**").permitAll().anyRequest().authenticated();
+		http.cors().and().csrf().disable().authorizeRequests().requestMatchers("**").permitAll().anyRequest().authenticated().and().httpBasic(); 
 		return http.build();
 	}
 //

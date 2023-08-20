@@ -17,6 +17,7 @@ import org.jsp.shopping.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import jakarta.servlet.http.HttpSession;
@@ -38,12 +39,16 @@ public class AdminService_implementation implements AdminService {
 
 	@Autowired
 	PaymentRepository paymentRepository;
+	
+	@Autowired
+	BCryptPasswordEncoder encoder;
 
 	@Override
 	public ResponseEntity<ResponseStructure<Admin>> createAdmin(Admin admin) {
 		ResponseStructure<Admin> structure = new ResponseStructure<>();
 		int existingEntries = admin_Repository.countByUsernameAndPassword(admin.getUsername(), admin.getPassword());
 		if (existingEntries == 0) {
+			admin.setPassword(encoder.encode(admin.getPassword()));
 			admin_Repository.save(admin);
 			structure.setData(admin);
 			structure.setMessage("Account Create for Admin");
@@ -67,7 +72,8 @@ public class AdminService_implementation implements AdminService {
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			if (admin.getPassword().equals(password)) {
+//			if (admin.getPassword().equals(password)) {
+			if(encoder.matches(password, admin.getPassword())) {
 				session.setAttribute("admin", admin);
 
 				structure.setData(admin);

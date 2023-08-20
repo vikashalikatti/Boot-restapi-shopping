@@ -1,9 +1,9 @@
 package org.jsp.shopping.service.implementation;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import org.json.JSONObject;
 import org.jsp.shopping.Repository.CustomerRepository;
@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
+import com.razorpay.RazorpayException;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -64,15 +65,15 @@ public class CustomerService_implementation implements CustomerService {
 
 	@Autowired
 	BCryptPasswordEncoder encoder;
-	
+
 	@Autowired
 	JwtUtil jwtUtil;
 
-	
 	@Autowired
 	ShoppingOrderRepository shoppingOrderRepository;
+
 	@Override
-	public ResponseEntity<ResponseStructure<Customer>> signup(Customer customer, String date) {
+	public ResponseEntity<ResponseStructure<Customer>> signup(Customer customer, String date) throws Exception {
 
 		ResponseStructure<Customer> structure = new ResponseStructure<>();
 		customer.setDob(LocalDate.parse(date));
@@ -86,9 +87,9 @@ public class CustomerService_implementation implements CustomerService {
 			return new ResponseEntity<>(structure, HttpStatus.ALREADY_REPORTED);
 		}
 //		String token = "EKART" + new Random().nextInt(10000, 999999);
-		
-		String token = jwtUtil.generateJwtTokenForCustomer(customer);
-		System.out.println(token+"--------------------------------------------------->");
+
+		String token = jwtUtil.generateJwtTokenForCustomer(customer, Duration.ofMinutes(5));
+//		System.out.println(token+"--------------------------------------------------->");
 
 		customer.setToken(token);
 
@@ -112,14 +113,21 @@ public class CustomerService_implementation implements CustomerService {
 	public ResponseEntity<ResponseStructure<Customer>> verify_link(String email, String token) {
 		ResponseStructure<Customer> structure = new ResponseStructure<>();
 		Customer customer = customerRepository.findByEmail(email);
-//		System.out.println(token + "---------------------------------->");
-//		System.out.println(customer.getToken() + "------------------------------>");
-		if (customer.getToken().equals(token)) {
+
+		if (customer != null && customer.getToken().equals(token)) {
+			if (jwtUtil.isTokenExpired(token)) {
+				structure.setData(null);
+				structure.setMessage("Link has expired");
+				structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+				return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+			}
+
 			customer.setStatus(true);
 			customer.setToken(null);
 			customerRepository.save(customer);
+
 			structure.setData(customer);
-			structure.setMessage("Account Created Succesfuully");
+			structure.setMessage("Account Created Successfully");
 			structure.setStatus(HttpStatus.CREATED.value());
 			return new ResponseEntity<>(structure, HttpStatus.CREATED);
 		} else {
@@ -128,6 +136,77 @@ public class CustomerService_implementation implements CustomerService {
 			structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
 			return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
 		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<Customer>> forgotLink(String email) throws Exception {
+		Customer customer = customerRepository.findByEmail(email);
+		ResponseStructure<Customer> structure = new ResponseStructure<>();
+		if (customer == null) {
+			structure.setData(null);
+			structure.setMessage("Email dosen't exits");
+			structure.setStatus(HttpStatus.NOT_FOUND.value());
+			return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+		} else {
+//			String token = "EKART" + new Random().nextInt(10000, 999999);
+			String token = jwtUtil.generateJwtTokenForCustomer(customer, Duration.ofMinutes(5));
+			customer.setToken(token);
+			customerRepository.save(customer);
+			// logic for sending the mail
+			if (mail.sendResetLink(customer)) {
+				Customer customer2 = customerRepository.save(customer);
+				structure.setData(customer2);
+				structure.setMessage("Verification Link send to Email Succesfull");
+				structure.setStatus(HttpStatus.FOUND.value());
+				return new ResponseEntity<>(structure, HttpStatus.FOUND);
+			} else {
+				structure.setData(null);
+				structure.setMessage("Something went wrong");
+				structure.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+				return new ResponseEntity<>(structure, HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<Customer>> resetPassword(String email, String token) {
+		Customer customer = customerRepository.findByEmail(email);
+		ResponseStructure<Customer> structure = new ResponseStructure<>();
+
+		if (jwtUtil.isTokenExpired(token)) {
+			structure.setData(null);
+			structure.setMessage("Token has expired");
+			structure.setStatus(HttpStatus.BAD_REQUEST.value());
+			return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+		}
+
+		if (customer.getToken().equals(token)) {
+			customer.setStatus(true);
+			customer.setToken(null);
+			Customer updatedCustomer = customerRepository.save(customer);
+
+			structure.setData(updatedCustomer);
+			structure.setMessage("Verified Successfully");
+			structure.setStatus(HttpStatus.OK.value());
+			return new ResponseEntity<>(structure, HttpStatus.OK);
+		} else {
+			structure.setData(null);
+			structure.setMessage("Not Verified");
+			structure.setStatus(HttpStatus.BAD_REQUEST.value());
+			return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<Customer>> setpassword(String email, String password) {
+		Customer customer = customerRepository.findByEmail(email);
+		ResponseStructure<Customer> structure = new ResponseStructure<>();
+		customer.setPassword(encoder.encode(password));
+		customerRepository.save(customer);
+		structure.setData(customer);
+		structure.setMessage("Password Set Success");
+		structure.setStatus(HttpStatus.OK.value());
+		return new ResponseEntity<>(structure, HttpStatus.OK);
 	}
 
 	@Override
@@ -602,7 +681,7 @@ public class CustomerService_implementation implements CustomerService {
 
 	@Override
 	public ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(HttpSession session, @RequestParam int pid,
-			@RequestParam String address) {
+			@RequestParam String address) throws RazorpayException {
 
 		Customer customer = (Customer) session.getAttribute("customer");
 		ResponseStructure<ShoppingOrder> structure = new ResponseStructure<>();
@@ -618,48 +697,55 @@ public class CustomerService_implementation implements CustomerService {
 			order.setPaymentMode(payment.getName());
 			order.setDeliveryDate(LocalDate.now().plusDays(3));
 			ShoppingCart cart = customer.getShoppingCart();
-
-			if (cart == null || cart.getItems() == null || cart.getItems().isEmpty()) {
+			if (cart == null) {
+				structure.setData(null);
+				structure.setMessage("Please add items to your cart");
+				structure.setStatus(HttpStatus.NOT_FOUND.value());
+				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+			}
+			if (cart.getItems() == null || cart.getItems().isEmpty()) {
 				structure.setData(null);
 				structure.setMessage("Please add items to your cart");
 				structure.setStatus(HttpStatus.BAD_REQUEST.value());
 				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
 			}
-
 			double total = 0;
 			for (Item item : cart.getItems()) {
-				total += item.getPrice();
+				total = total + item.getPrice();
 			}
-
 			order.setTotalPrice(total);
 			order.setItems(cart.getItems());
 
 			if (payment.getName().equalsIgnoreCase("RazorPay")) {
-				try {
-					JSONObject object = new JSONObject();
-					object.put("currency", "INR");
-					object.put("amount", total * 100);
+				JSONObject object = new JSONObject();
+				object.put("currency", "INR");
+				object.put("amount", total * 100);
 
-					RazorpayClient client = new RazorpayClient();
-					Order razorpayOrder = client.orders.create(object);
-					order.setStatus(razorpayOrder.get("status"));
-					order.setCurrency("INR");
-					order.setOrderId(razorpayOrder.get("id"));
-					order.setPayment_key();
-					order.setCompany_name("E-Kart");
-					shoppingOrderRepository.save(order);
-					structure.setMessage("Order created successfully payment");
-					structure.setData(order);
-					structure.setStatus(HttpStatus.CREATED.value());
-					return new ResponseEntity<>(structure, HttpStatus.CREATED);
-				} catch (Exception e) {
-					e.printStackTrace();
-					structure.setData(null);
-					structure.setMessage("Error processing payment");
-					structure.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-					return new ResponseEntity<>(structure, HttpStatus.INTERNAL_SERVER_ERROR);
-				}
+				RazorpayClient client = new RazorpayClient();
+				Order order1 = client.orders.create(object);
+				order.setStatus(order1.get("status"));
+				order.setCurrency("INR");
+				order.setOrderId(order1.get("id"));
+				order.setPayment_key();
+				order.setCompany_name("E-Kart");
+				structure.setMessage("Order created successfully payment");
+				structure.setData(order);
+				structure.setStatus(HttpStatus.CREATED.value());
+				return new ResponseEntity<>(structure, HttpStatus.CREATED);
 			} else {
+				List<ShoppingOrder> list = customer.getOrders();
+				if (list == null) {
+					list = new ArrayList<>();
+				}
+				list.add(order);
+				customer.setOrders(list);
+				customer.setAddress(address);
+				cart.setItems(null);
+				customer.setShoppingCart(null);
+				Customer customer1 = customerRepository.save(customer);
+				cartRepository.delete(cart);
+				session.removeAttribute("customer");
+				session.setAttribute("customer", customer1);
 				structure.setMessage("Order created successfully null");
 				structure.setData(order);
 				structure.setStatus(HttpStatus.CREATED.value());
@@ -668,64 +754,4 @@ public class CustomerService_implementation implements CustomerService {
 		}
 	}
 
-	@Override
-	public ResponseEntity<ResponseStructure<Customer>> forgotLink(String email) {
-		Customer customer = customerRepository.findByEmail(email);
-		ResponseStructure<Customer> structure = new ResponseStructure<>();
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Email dosen't exits");
-			structure.setStatus(HttpStatus.NOT_FOUND.value());
-			return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
-		} else {
-			String token = "EKART" + new Random().nextInt(10000, 999999);
-			customer.setToken(token);
-			customerRepository.save(customer);
-			// logic for sending the mail
-			if (mail.sendResetLink(customer)) {
-				Customer customer2 = customerRepository.save(customer);
-				structure.setData(customer2);
-				structure.setMessage("Verification Link send to Email Succesfull");
-				structure.setStatus(HttpStatus.FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.FOUND);
-			} else {
-				structure.setData(null);
-				structure.setMessage("Something went wrong");
-				structure.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-				return new ResponseEntity<>(structure, HttpStatus.INTERNAL_SERVER_ERROR);
-			}
-		}
-	}
-
-	@Override
-	public ResponseEntity<ResponseStructure<Customer>> resetPassword(String email, String token) {
-		Customer customer = customerRepository.findByEmail(email);
-		ResponseStructure<Customer> structure = new ResponseStructure<>();
-		if (customer.getToken().equals(token)) {
-			customer.setStatus(true);
-			customer.setToken(null);
-			Customer customer2 = customerRepository.save(customer);
-			structure.setData(customer2);
-			structure.setMessage("Verified Succesfull");
-			structure.setStatus(HttpStatus.OK.value());
-			return new ResponseEntity<>(structure, HttpStatus.OK);
-		} else {
-			structure.setData(null);
-			structure.setMessage("Not Verified");
-			structure.setStatus(HttpStatus.BAD_REQUEST.value());
-			return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
-		}
-	}
-
-	@Override
-	public ResponseEntity<ResponseStructure<Customer>> setpassword(String email, String password) {
-		Customer customer = customerRepository.findByEmail(email);
-		ResponseStructure<Customer> structure = new ResponseStructure<>();
-		customer.setPassword(encoder.encode(password));
-		customerRepository.save(customer);
-		structure.setData(customer);
-		structure.setMessage("Password Set Success");
-		structure.setStatus(HttpStatus.OK.value());
-		return new ResponseEntity<>(structure, HttpStatus.OK);
-	}
 }

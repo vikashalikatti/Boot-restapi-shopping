@@ -11,11 +11,13 @@ import org.jsp.shopping.dto.Wishlist;
 import org.jsp.shopping.helper.ResponseStructure;
 import org.springframework.http.ResponseEntity;
 
+import com.razorpay.RazorpayException;
+
 import jakarta.servlet.http.HttpSession;
 
 public interface CustomerService {
 
-	ResponseEntity<ResponseStructure<Customer>> signup(Customer customer, String date);
+	ResponseEntity<ResponseStructure<Customer>> signup(Customer customer, String date)throws Exception;
 
 	ResponseEntity<ResponseStructure<Customer>> verify_link(String email, String token);
 
@@ -47,9 +49,9 @@ public interface CustomerService {
 
 	ResponseEntity<ResponseStructure<List<ShoppingOrder>>> viewOrders(HttpSession session);
 
-	ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(HttpSession session, int pid, String address);
+	ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(HttpSession session, int pid, String address)throws RazorpayException;
 
-	ResponseEntity<ResponseStructure<Customer>> forgotLink(String email);
+	ResponseEntity<ResponseStructure<Customer>> forgotLink(String email) throws Exception;
 
 	ResponseEntity<ResponseStructure<Customer>> resetPassword(String email, String token);
 

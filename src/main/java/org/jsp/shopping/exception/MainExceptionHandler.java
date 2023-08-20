@@ -8,6 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.SignatureException;
 import jakarta.validation.ConstraintViolationException;
 
 @ControllerAdvice
@@ -58,6 +61,31 @@ public class MainExceptionHandler {
 		structure.setStatus(HttpStatus.BAD_REQUEST.value());
 		structure.setMessage("Null");
 		structure.setData(exception.getMessage());
+		return new ResponseEntity<ResponseStructure<String>>(structure, HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler(ExpiredJwtException.class)
+	public ResponseEntity<ResponseStructure<String>> handleExpiredJwtException(ExpiredJwtException ex) {
+		String errorMessage = "JWT token has expired.";
+		ResponseStructure<String> structure = new ResponseStructure<>();
+		structure.setStatus(HttpStatus.BAD_REQUEST.value());
+		structure.setData(ex.getMessage());
+		return new ResponseEntity<ResponseStructure<String>>(structure, HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler({SignatureException.class })
+	public ResponseEntity<ResponseStructure<String>> handleJwtException(JwtException ex) {
+		ResponseStructure<String> structure = new ResponseStructure<>();
+		structure.setStatus(HttpStatus.BAD_REQUEST.value());
+		structure.setData(ex.getMessage());
+		return new ResponseEntity<ResponseStructure<String>>(structure, HttpStatus.BAD_REQUEST);
+	}
+	
+	@ExceptionHandler(Exception.class)
+    public ResponseEntity<ResponseStructure<String>> handleGeneralException(Exception ex) {
+		ResponseStructure<String> structure = new ResponseStructure<>();
+		structure.setStatus(HttpStatus.BAD_REQUEST.value());
+		structure.setData(ex.getMessage());
 		return new ResponseEntity<ResponseStructure<String>>(structure, HttpStatus.BAD_REQUEST);
 	}
 }
