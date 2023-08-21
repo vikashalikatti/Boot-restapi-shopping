@@ -114,14 +114,7 @@ public class CustomerService_implementation implements CustomerService {
 		ResponseStructure<Customer> structure = new ResponseStructure<>();
 		Customer customer = customerRepository.findByEmail(email);
 
-		if (customer != null && customer.getToken().equals(token)) {
-			if (jwtUtil.isTokenExpired(token)) {
-				structure.setData(null);
-				structure.setMessage("Link has expired");
-				structure.setStatus(HttpStatus.UNAUTHORIZED.value());
-				return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
-			}
-
+		if (customer != null) {
 			customer.setStatus(true);
 			customer.setToken(null);
 			customerRepository.save(customer);
@@ -726,9 +719,9 @@ public class CustomerService_implementation implements CustomerService {
 				order.setStatus(order1.get("status"));
 				order.setCurrency("INR");
 				order.setOrderId(order1.get("id"));
-				order.setPayment_key();
+				order.setPayment_key("rzp_test_a5jX27qK8Szlyb");
 				order.setCompany_name("E-Kart");
-				structure.setMessage("Order created successfully payment");
+				structure.setMessage("Order created successfully");
 				structure.setData(order);
 				structure.setStatus(HttpStatus.CREATED.value());
 				return new ResponseEntity<>(structure, HttpStatus.CREATED);
@@ -746,7 +739,7 @@ public class CustomerService_implementation implements CustomerService {
 				cartRepository.delete(cart);
 				session.removeAttribute("customer");
 				session.setAttribute("customer", customer1);
-				structure.setMessage("Order created successfully null");
+				structure.setMessage("Order created successfully");
 				structure.setData(order);
 				structure.setStatus(HttpStatus.CREATED.value());
 				return new ResponseEntity<>(structure, HttpStatus.CREATED);

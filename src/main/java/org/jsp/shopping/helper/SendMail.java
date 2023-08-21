@@ -93,6 +93,7 @@ public class SendMail {
 			model.put("genderPrefix", genderPrefix);
 			String email = customer.getEmail();
 			model.put("email", email);
+			model.put("customer", customer);
 			LocalDateTime otpExpirationTime = LocalDateTime.now().plusMinutes(5);
 
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
