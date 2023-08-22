@@ -49,7 +49,7 @@ public class MainExceptionHandler {
 	public ResponseEntity<ResponseStructure<String>> handle(NullPointerException exception) {
 		ResponseStructure<String> structure = new ResponseStructure<>();
 		structure.setStatus(HttpStatus.BAD_REQUEST.value());
-		structure.setMessage("Null");
+		structure.setMessage("Object is NULL");
 		structure.setData(exception.getMessage());
 
 		return new ResponseEntity<ResponseStructure<String>>(structure, HttpStatus.BAD_REQUEST);
@@ -59,7 +59,7 @@ public class MainExceptionHandler {
 	public ResponseEntity<ResponseStructure<String>> handle(ConstraintViolationException exception) {
 		ResponseStructure<String> structure = new ResponseStructure<>();
 		structure.setStatus(HttpStatus.BAD_REQUEST.value());
-		structure.setMessage("Null");
+		structure.setMessage("Constraint Violation");
 		structure.setData(exception.getMessage());
 		return new ResponseEntity<ResponseStructure<String>>(structure, HttpStatus.BAD_REQUEST);
 	}
@@ -69,6 +69,7 @@ public class MainExceptionHandler {
 		String errorMessage = "JWT token has expired.";
 		ResponseStructure<String> structure = new ResponseStructure<>();
 		structure.setStatus(HttpStatus.BAD_REQUEST.value());
+		structure.setMessage("JWT Token has expired");
 		structure.setData(ex.getMessage());
 		return new ResponseEntity<ResponseStructure<String>>(structure, HttpStatus.BAD_REQUEST);
 	}
