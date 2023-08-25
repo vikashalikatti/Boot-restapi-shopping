@@ -17,6 +17,11 @@ import org.jsp.shopping.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -26,28 +31,32 @@ import jakarta.servlet.http.HttpSession;
 public class AdminService_implementation implements AdminService {
 
 	@Autowired
-	Admin_Repository admin_Repository;
+	private Admin_Repository admin_Repository;
 
 	@Autowired
-	ProductRepository productRepository;
+	private ProductRepository productRepository;
 
 	@Autowired
-	MerchantRepository merchantRepository;
+	private MerchantRepository merchantRepository;
 
 	@Autowired
-	CustomerRepository customerRepository;
+	private CustomerRepository customerRepository;
 
 	@Autowired
-	PaymentRepository paymentRepository;
-	
+	private PaymentRepository paymentRepository;
+
 	@Autowired
-	BCryptPasswordEncoder encoder;
+	private BCryptPasswordEncoder encoder;
+
+	@Autowired
+	private AuthenticationManager authenticationManager;
 
 	@Override
 	public ResponseEntity<ResponseStructure<Admin>> createAdmin(Admin admin) {
 		ResponseStructure<Admin> structure = new ResponseStructure<>();
 		int existingEntries = admin_Repository.countByUsernameAndPassword(admin.getUsername(), admin.getPassword());
 		if (existingEntries == 0) {
+			admin.setRole("admin");
 			admin.setPassword(encoder.encode(admin.getPassword()));
 			admin_Repository.save(admin);
 			structure.setData(admin);
@@ -66,28 +75,50 @@ public class AdminService_implementation implements AdminService {
 	public ResponseEntity<ResponseStructure<Admin>> login(String username, String password, HttpSession session) {
 		ResponseStructure<Admin> structure = new ResponseStructure<>();
 		Admin admin = admin_Repository.findByUsername(username);
-		if (admin == null) {
-			structure.setData(null);
-			structure.setMessage("Incorrect username");
-			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
-			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
-		} else {
-//			if (admin.getPassword().equals(password)) {
-			if(encoder.matches(password, admin.getPassword())) {
-				session.setAttribute("admin", admin);
 
-				structure.setData(admin);
-				structure.setMessage("Login Success");
-				structure.setStatus(HttpStatus.CREATED.value());
-				return new ResponseEntity<>(structure, HttpStatus.CREATED);
-			} else {
-				structure.setData(null);
-				structure.setMessage("Incorrect Password");
-				structure.setStatus(HttpStatus.BAD_REQUEST.value());
-				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
-			}
+		UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, password);
+
+		Authentication authentication = authenticationManager.authenticate(authToken);
+
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+
+		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+		if (userDetails != null) {
+			session.setAttribute("admin", admin);
+			structure.setData(admin);
+			structure.setMessage("Login Success");
+			structure.setStatus(HttpStatus.CREATED.value());
 		}
+		return new ResponseEntity<>(structure, HttpStatus.CREATED);
 	}
+
+//	@Override
+//	public ResponseEntity<ResponseStructure<Admin>> login(String username, String password, HttpSession session) {
+//		ResponseStructure<Admin> structure = new ResponseStructure<>();
+//		Admin admin = admin_Repository.findByUsername(username);
+//		if (admin == null) {
+//			structure.setData(null);
+//			structure.setMessage("Incorrect username");
+//			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+//			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+//		} else {
+////			if (admin.getPassword().equals(password)) {
+//			if(encoder.matches(password, admin.getPassword())) {
+//				session.setAttribute("admin", admin);
+//
+//				structure.setData(admin);
+//				structure.setMessage("Login Success");
+//				structure.setStatus(HttpStatus.CREATED.value());
+//				return new ResponseEntity<>(structure, HttpStatus.CREATED);
+//			} else {
+//				structure.setData(null);
+//				structure.setMessage("Incorrect Password");
+//				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+//				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+//			}
+//		}
+//	}
 
 	@Override
 	public ResponseEntity<ResponseStructure<List<Product>>> viewAllProducts(HttpSession session) {

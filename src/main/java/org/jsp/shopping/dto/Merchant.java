@@ -61,6 +61,9 @@ public class Merchant {
 
 	private boolean status;
 
+	@NotBlank(message = "Role is Required")
+	private String role;
+
 	@Lob
 	@Column(columnDefinition = "MEDIUMBLOB")
 	private byte[] picture;
@@ -69,4 +72,6 @@ public class Merchant {
 	List<Product> products;
 
 	private LocalDateTime otpGeneratedTime;
+
+	
 }

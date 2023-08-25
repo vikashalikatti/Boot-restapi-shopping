@@ -18,6 +18,11 @@ import org.jsp.shopping.service.MerachantService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,16 +36,19 @@ import jakarta.servlet.http.HttpSession;
 @Service
 public class MerhantService_implementation implements MerachantService {
 	@Autowired
-	Merchant_dao merchantDao;
+	private Merchant_dao merchantDao;
 
 	@Autowired
-	SendMail mail;
+	private SendMail mail;
 
 	@Autowired
-	ProductRepository productRepository;
+	private ProductRepository productRepository;
 
 	@Autowired
-	BCryptPasswordEncoder encoder;
+	private BCryptPasswordEncoder encoder;
+
+	@Autowired
+	private AuthenticationManager authenticationManager;
 
 	@Override
 	public ResponseEntity<ResponseStructure<Merchant>> signup(Merchant merchant, String date, MultipartFile pic)
@@ -65,7 +73,7 @@ public class MerhantService_implementation implements MerachantService {
 		merchant.setOtpGeneratedTime(LocalDateTime.now());
 
 		if (mail.sendOtp(merchant)) {
-
+			merchant.setRole("merchant");
 			Merchant merchant2 = merchantDao.save(merchant);
 			structure.setData(merchant2);
 			structure.setStatus(HttpStatus.CREATED.value());
@@ -112,7 +120,8 @@ public class MerhantService_implementation implements MerachantService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Merchant>> resendOtp(String email) throws TemplateNotFoundException, MalformedTemplateNameException, ParseException, IOException, TemplateException {
+	public ResponseEntity<ResponseStructure<Merchant>> resendOtp(String email) throws TemplateNotFoundException,
+			MalformedTemplateNameException, ParseException, IOException, TemplateException {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
 		Merchant merchant = merchantDao.findByEmail(email);
 
@@ -144,34 +153,64 @@ public class MerhantService_implementation implements MerachantService {
 	public ResponseEntity<ResponseStructure<Merchant>> login(String email, String password, HttpSession session) {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
 		Merchant merchant = merchantDao.findByEmail(email);
-		if (merchant == null) {
-			structure.setData(null);
-			structure.setMessage("Incorrect Email");
-			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
-			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
-		} else {
-			if (encoder.matches(password, merchant.getPassword())) {
-				if (merchant.isStatus()) {
-					session.setAttribute("merchant", merchant);
-//					System.out.println(session.getId()+"----------------------------------------->");
-					structure.setData(merchant);
-					structure.setMessage("Login Success");
-					structure.setStatus(HttpStatus.CREATED.value());
-					return new ResponseEntity<>(structure, HttpStatus.CREATED);
-				} else {
-					structure.setData(null);
-					structure.setMessage("Mail verification Pending, Click on Forgot password and verify otp");
-					structure.setStatus(HttpStatus.BAD_REQUEST.value());
-					return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
-				}
+		UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(email, password);
+
+		Authentication authentication = authenticationManager.authenticate(authToken);
+
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+
+		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+		
+		if (userDetails != null) {
+			if (merchant.isStatus()) {
+				session.setAttribute("merchant", merchant);
+//			System.out.println(session.getId()+"----------------------------------------->");
+				structure.setData(merchant);
+				structure.setMessage("Login Success");
+				structure.setStatus(HttpStatus.CREATED.value());
+				return new ResponseEntity<>(structure, HttpStatus.CREATED);
 			} else {
 				structure.setData(null);
-				structure.setMessage("Incorrect Password");
+				structure.setMessage("Mail verification Pending, Click on Forgot password and verify otp");
 				structure.setStatus(HttpStatus.BAD_REQUEST.value());
 				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
 			}
 		}
+		return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
 	}
+
+//	@Override
+//	public ResponseEntity<ResponseStructure<Merchant>> login(String email, String password, HttpSession session) {
+//		ResponseStructure<Merchant> structure = new ResponseStructure<>();
+//		Merchant merchant = merchantDao.findByEmail(email);
+//		if (merchant == null) {
+//			structure.setData(null);
+//			structure.setMessage("Incorrect Email");
+//			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+//			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+//		} else {
+//			if (encoder.matches(password, merchant.getPassword())) {
+//				if (merchant.isStatus()) {
+//					session.setAttribute("merchant", merchant);
+////					System.out.println(session.getId()+"----------------------------------------->");
+//					structure.setData(merchant);
+//					structure.setMessage("Login Success");
+//					structure.setStatus(HttpStatus.CREATED.value());
+//					return new ResponseEntity<>(structure, HttpStatus.CREATED);
+//				} else {
+//					structure.setData(null);
+//					structure.setMessage("Mail verification Pending, Click on Forgot password and verify otp");
+//					structure.setStatus(HttpStatus.BAD_REQUEST.value());
+//					return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+//				}
+//			} else {
+//				structure.setData(null);
+//				structure.setMessage("Incorrect Password");
+//				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+//				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+//			}
+//		}
+//	}
 
 	@Override
 	public ResponseEntity<ResponseStructure<Merchant>> addProduct(HttpSession session, Product product,
@@ -330,7 +369,8 @@ public class MerhantService_implementation implements MerachantService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Merchant>> sendForgotOtp(String email) throws TemplateNotFoundException, MalformedTemplateNameException, ParseException, IOException, TemplateException {
+	public ResponseEntity<ResponseStructure<Merchant>> sendForgotOtp(String email) throws TemplateNotFoundException,
+			MalformedTemplateNameException, ParseException, IOException, TemplateException {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
 		Merchant merchant = merchantDao.findByEmail(email);
 
@@ -391,7 +431,8 @@ public class MerhantService_implementation implements MerachantService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Merchant>> resendForgotOtp(String email) throws TemplateNotFoundException, MalformedTemplateNameException, ParseException, IOException, TemplateException {
+	public ResponseEntity<ResponseStructure<Merchant>> resendForgotOtp(String email) throws TemplateNotFoundException,
+			MalformedTemplateNameException, ParseException, IOException, TemplateException {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
 		Merchant merchant = merchantDao.findByEmail(email);
 

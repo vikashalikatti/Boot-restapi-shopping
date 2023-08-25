@@ -22,4 +22,7 @@ public class Admin {
 
 	@NotBlank(message = "Password is required")
 	private String password;
+
+	@NotBlank(message = "Role is Required")
+	private String role;
 }

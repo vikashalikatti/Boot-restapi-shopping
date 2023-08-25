@@ -50,6 +50,9 @@ public class Customer {
 
 	private String token;
 
+	@NotBlank(message = "Role is Required")
+	private String role;
+
 	private boolean status;
 	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	ShoppingCart shoppingCart;

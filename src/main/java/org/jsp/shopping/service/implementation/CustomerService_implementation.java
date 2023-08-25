@@ -26,6 +26,11 @@ import org.jsp.shopping.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -40,37 +45,40 @@ import jakarta.servlet.http.HttpSession;
 public class CustomerService_implementation implements CustomerService {
 
 	@Autowired
-	CustomerRepository customerRepository;
+	private CustomerRepository customerRepository;
 
 	@Autowired
-	SendMail mail;
+	private SendMail mail;
 
 	@Autowired
-	ProductRepository productRepository;
+	private ProductRepository productRepository;
 
 	@Autowired
-	Item item;
+	private Item item;
 
 	@Autowired
-	ShoppingCart shoppingCart;
+	private ShoppingCart shoppingCart;
 
 	@Autowired
-	WishlistRepository wishlistRepository;
+	private WishlistRepository wishlistRepository;
 
 	@Autowired
-	PaymentRepository paymentRepository;
+	private PaymentRepository paymentRepository;
 
 	@Autowired
-	ShoppingCartRepository cartRepository;
+	private ShoppingCartRepository cartRepository;
 
 	@Autowired
-	BCryptPasswordEncoder encoder;
+	private BCryptPasswordEncoder encoder;
 
 	@Autowired
-	JwtUtil jwtUtil;
+	private JwtUtil jwtUtil;
 
 	@Autowired
-	ShoppingOrderRepository shoppingOrderRepository;
+	private ShoppingOrderRepository shoppingOrderRepository;
+
+	@Autowired
+	private AuthenticationManager authenticationManager;
 
 	@Override
 	public ResponseEntity<ResponseStructure<Customer>> signup(Customer customer, String date) throws Exception {
@@ -95,6 +103,7 @@ public class CustomerService_implementation implements CustomerService {
 
 		// logic for sending the mail
 		if (mail.sendLink(customer)) {
+			customer.setRole("customer");
 			customerRepository.save(customer);
 
 			structure.setData(customer);
@@ -206,34 +215,69 @@ public class CustomerService_implementation implements CustomerService {
 	public ResponseEntity<ResponseStructure<Customer>> login(String email, String password, HttpSession session) {
 		ResponseStructure<Customer> structure = new ResponseStructure<>();
 		Customer customer = customerRepository.findByEmail(email);
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Incorrect Email");
-			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
-			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
-		} else {
-			if (encoder.matches(password, customer.getPassword())) {
-				if (customer.isStatus()) {
-					session.setAttribute("customer", customer);
+//		if (customer == null) {
+//			structure.setData(null);
+//			structure.setMessage("Incorrect Email");
+//			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+//			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+//		}
+		UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(email, password);
 
-					structure.setData(customer);
-					structure.setMessage("Login Success");
-					structure.setStatus(HttpStatus.CREATED.value());
-					return new ResponseEntity<>(structure, HttpStatus.CREATED);
-				} else {
-					structure.setData(null);
-					structure.setMessage("Mail verification Pending, Click on Forgot password and verify otp");
-					structure.setStatus(HttpStatus.BAD_REQUEST.value());
-					return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
-				}
+		Authentication authentication = authenticationManager.authenticate(authToken);
+
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+
+		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+//		System.out.println(userDetails + "---------------------------------
+		if (userDetails != null) {
+			if (customer.isStatus()) {
+				session.setAttribute("customer", customer);
+				structure.setData(customer);
+				structure.setMessage("Login Success");
+				structure.setStatus(HttpStatus.CREATED.value());
+				return new ResponseEntity<>(structure, HttpStatus.CREATED);
 			} else {
 				structure.setData(null);
-				structure.setMessage("Incorrect Password");
+				structure.setMessage("Mail verification Pending, Click on Forgot password and verify otp");
 				structure.setStatus(HttpStatus.BAD_REQUEST.value());
 				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
 			}
 		}
+		return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
 	}
+
+//	@Override
+//	public ResponseEntity<ResponseStructure<Customer>> login(String email, String password, HttpSession session) {
+//		ResponseStructure<Customer> structure = new ResponseStructure<>();
+//		Customer customer = customerRepository.findByEmail(email);
+//		if (customer == null) {
+//			structure.setData(null);
+//			structure.setMessage("Incorrect Email");
+//			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+//			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+//		} else {
+//			if (encoder.matches(password, customer.getPassword())) {
+//				if (customer.isStatus()) {
+//					session.setAttribute("customer", customer);
+//
+//					structure.setData(customer);
+//					structure.setMessage("Login Success");
+//					structure.setStatus(HttpStatus.CREATED.value());
+//					return new ResponseEntity<>(structure, HttpStatus.CREATED);
+//				} else {
+//					structure.setData(null);
+//					structure.setMessage("Mail verification Pending, Click on Forgot password and verify otp");
+//					structure.setStatus(HttpStatus.BAD_REQUEST.value());
+//					return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+//				}
+//			} else {
+//				structure.setData(null);
+//				structure.setMessage("Incorrect Password");
+//				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+//				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+//			}
+//		}
+//	}
 
 	@Override
 	public ResponseEntity<ResponseStructure<List<Product>>> view_products(HttpSession session) {
@@ -714,12 +758,12 @@ public class CustomerService_implementation implements CustomerService {
 				object.put("currency", "INR");
 				object.put("amount", total * 100);
 
-				RazorpayClient client = new RazorpayClient("rzp_test_a5jX27qK8Szlyb", "NmEibVAHSdK5qvYDrhLeUjZw");
+				RazorpayClient client = new RazorpayClient();
 				Order order1 = client.orders.create(object);
 				order.setStatus(order1.get("status"));
 				order.setCurrency("INR");
 				order.setOrderId(order1.get("id"));
-				order.setPayment_key("rzp_test_a5jX27qK8Szlyb");
+				order.setPayment_key();
 				order.setCompany_name("E-Kart");
 				structure.setMessage("Order created successfully");
 				structure.setData(order);
