@@ -99,7 +99,6 @@ public class SendMail {
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 			String formattedOTPExpirationTime = otpExpirationTime.format(formatter);
 			model.put("formattedOTPExpirationTime", formattedOTPExpirationTime);
-			System.out.println("Formatted OTP Expiration Time: " + formattedOTPExpirationTime);
 			String token = customer.getToken();
 			model.put("token", token);
 			String content = FreeMarkerTemplateUtils.processTemplateIntoString(template, model);
@@ -141,7 +140,6 @@ public class SendMail {
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 			String formattedOTPExpirationTime = otpExpirationTime.format(formatter);
 			model.put("formattedOTPExpirationTime", formattedOTPExpirationTime);
-			System.out.println("Formatted OTP Expiration Time: " + formattedOTPExpirationTime);
 			String token = customer.getToken();
 			model.put("token", token);
 			String content = FreeMarkerTemplateUtils.processTemplateIntoString(template, model);

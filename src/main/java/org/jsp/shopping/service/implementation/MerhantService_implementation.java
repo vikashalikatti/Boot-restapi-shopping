@@ -5,13 +5,17 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import org.jsp.shopping.Repository.ProductRepository;
 import org.jsp.shopping.dao.Merchant_dao;
 import org.jsp.shopping.dto.Merchant;
 import org.jsp.shopping.dto.Product;
+import org.jsp.shopping.helper.JwtUtil;
 import org.jsp.shopping.helper.ResponseStructure;
 import org.jsp.shopping.helper.SendMail;
 import org.jsp.shopping.service.MerachantService;
@@ -31,6 +35,7 @@ import freemarker.core.ParseException;
 import freemarker.template.MalformedTemplateNameException;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateNotFoundException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpSession;
 
 @Service
@@ -49,6 +54,11 @@ public class MerhantService_implementation implements MerachantService {
 
 	@Autowired
 	private AuthenticationManager authenticationManager;
+
+	@Autowired
+	JwtUtil jwtUtil;
+
+	private Set<String> invalidatedTokens = new HashSet<>();
 
 	@Override
 	public ResponseEntity<ResponseStructure<Merchant>> signup(Merchant merchant, String date, MultipartFile pic)
@@ -160,18 +170,21 @@ public class MerhantService_implementation implements MerachantService {
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 
 		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-		
+
 		if (userDetails != null) {
 			if (merchant.isStatus()) {
-				session.setAttribute("merchant", merchant);
-//			System.out.println(session.getId()+"----------------------------------------->");
-				structure.setData(merchant);
+				long expirationMillis = System.currentTimeMillis() + 3600000; // 1 hour in milliseconds
+				Date expirationDate = new Date(expirationMillis);
+
+				String token = jwtUtil.generateToken(userDetails, merchant.getRole(), expirationDate);
+				session.setAttribute("token", token);
+				structure.setData2(token);
 				structure.setMessage("Login Success");
 				structure.setStatus(HttpStatus.CREATED.value());
 				return new ResponseEntity<>(structure, HttpStatus.CREATED);
 			} else {
 				structure.setData(null);
-				structure.setMessage("Mail verification Pending, Click on Forgot password and verify otp");
+				structure.setMessage("Mail verification Pending, Click on Forgot password and verify OTP");
 				structure.setStatus(HttpStatus.BAD_REQUEST.value());
 				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
 			}
@@ -179,61 +192,35 @@ public class MerhantService_implementation implements MerachantService {
 		return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
 	}
 
-//	@Override
-//	public ResponseEntity<ResponseStructure<Merchant>> login(String email, String password, HttpSession session) {
-//		ResponseStructure<Merchant> structure = new ResponseStructure<>();
-//		Merchant merchant = merchantDao.findByEmail(email);
-//		if (merchant == null) {
-//			structure.setData(null);
-//			structure.setMessage("Incorrect Email");
-//			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
-//			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
-//		} else {
-//			if (encoder.matches(password, merchant.getPassword())) {
-//				if (merchant.isStatus()) {
-//					session.setAttribute("merchant", merchant);
-////					System.out.println(session.getId()+"----------------------------------------->");
-//					structure.setData(merchant);
-//					structure.setMessage("Login Success");
-//					structure.setStatus(HttpStatus.CREATED.value());
-//					return new ResponseEntity<>(structure, HttpStatus.CREATED);
-//				} else {
-//					structure.setData(null);
-//					structure.setMessage("Mail verification Pending, Click on Forgot password and verify otp");
-//					structure.setStatus(HttpStatus.BAD_REQUEST.value());
-//					return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
-//				}
-//			} else {
-//				structure.setData(null);
-//				structure.setMessage("Incorrect Password");
-//				structure.setStatus(HttpStatus.BAD_REQUEST.value());
-//				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
-//			}
-//		}
-//	}
-
 	@Override
-	public ResponseEntity<ResponseStructure<Merchant>> addProduct(HttpSession session, Product product,
-			MultipartFile pic) throws IOException {
+	public ResponseEntity<ResponseStructure<Merchant>> addProduct(Product product, MultipartFile pic, String authToken,
+			String email) throws IOException {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
-		if (session.getAttribute("merchant") == null) {
-			structure.setData(null);
-			structure.setMessage("Login Again");
-			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
-			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
-		} else {
-			Merchant merchant = (Merchant) session.getAttribute("merchant");
 
-			byte[] image = new byte[pic.getInputStream().available()];
-			pic.getInputStream().read(image);
+		try {
+			// Check if the JWT token is valid
+			if (jwtUtil.isValidToken(authToken)) {
+				structure.setMessage("Unauthorized");
+				structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+				return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+			}
 
+//			Merchant merchant = jwtUtil.extractMerchantFromToken(authToken);
+			Merchant merchant = merchantDao.findByEmail(email);
+
+			// Read and set the product image
+			byte[] image = pic.getBytes();
 			product.setImage(image);
-			product.setName(merchant.getName() + "-" + product.getName());
 
-			Product product2 = merchantDao.findProductByName(product.getName());
-			if (product2 != null) {
-				product.setId(product2.getId());
-				product.setStock(product.getStock() + product2.getStock());
+			// Generate a unique product name
+			String uniqueProductName = merchant.getName() + "-" + product.getName();
+			product.setName(uniqueProductName);
+
+			// Check if a product with the same name already exists
+			Product existingProduct = merchantDao.findProductByName(uniqueProductName);
+			if (existingProduct != null) {
+				product.setId(existingProduct.getId());
+				product.setStock(product.getStock() + existingProduct.getStock());
 			}
 
 			List<Product> products = merchant.getProducts();
@@ -242,24 +229,37 @@ public class MerhantService_implementation implements MerachantService {
 			}
 			products.add(product);
 			merchant.setProducts(products);
+			merchant = merchantDao.save(merchant);
 
-			session.setAttribute("merchant", merchantDao.save(merchant));
 			structure.setData(merchant);
 			structure.setMessage("Product Added Successfully");
 			structure.setStatus(HttpStatus.CREATED.value());
+			return new ResponseEntity<>(structure, HttpStatus.CREATED);
+		} catch (IOException e) {
+			structure.setMessage("Failed to read the product image");
+			structure.setStatus(HttpStatus.BAD_REQUEST.value());
 			return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+		} catch (JwtException e) {
+			structure.setMessage("Invalid JWT token");
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		}
+//	    } catch (Exception e) {
+//	        structure.setMessage("Internal Server Error");
+//	        structure.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+//	        return new ResponseEntity<>(structure, HttpStatus.INTERNAL_SERVER_ERROR);
+//	    }
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<List<Product>>> fetchAllProducts(HttpSession session) {
+	public ResponseEntity<ResponseStructure<List<Product>>> fetchAllProducts(String authToken, String email) {
 		ResponseStructure<List<Product>> responseStructure = new ResponseStructure<>();
 
-		Merchant merchant = (Merchant) session.getAttribute("merchant");
-
-		if (merchant == null) {
+//		Merchant merchant = (Merchant) session.getAttribute("merchant");
+		Merchant merchant = merchantDao.findByEmail(email);
+		if (jwtUtil.isValidToken(authToken)) {
 			responseStructure.setData(null);
-			responseStructure.setMessage("Login Again");
+			responseStructure.setMessage("UNAUTHORIZED");
 			responseStructure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(responseStructure, HttpStatus.UNAUTHORIZED);
 		} else {
@@ -281,46 +281,61 @@ public class MerhantService_implementation implements MerachantService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Product>> deleteProduct(int id, HttpSession session) {
+	public ResponseEntity<ResponseStructure<Product>> deleteProduct(int id, String authToken, String email) {
 		ResponseStructure<Product> structure = new ResponseStructure<>();
-		if (session.getAttribute("merchant") == null) {
+
+		// Check if the authentication token is valid
+		if (jwtUtil.isValidToken(authToken)) {
 			structure.setData(null);
-			structure.setMessage("Login Again");
+			structure.setMessage("UNAUTHORIZED");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
 			Product product = merchantDao.findProductById(id);
-			Merchant merchant = (Merchant) session.getAttribute("merchant");
-			structure.setStatus(HttpStatus.ACCEPTED.value());
-			if (merchant.getProducts() == null || merchant.getProducts().isEmpty()) {
-				structure.setStatus(HttpStatus.NOT_FOUND.value());
-				structure.setMessage("Products Not Found");
-				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
-			} else {
+			Merchant merchant = merchantDao.findByEmail(email);
 
-				merchant.getProducts().remove(product);
-				session.removeAttribute("merchant");
-				session.setAttribute("merchant", merchantDao.save(merchant));
-				merchantDao.removeProduct(product);
-				structure.setStatus(HttpStatus.ACCEPTED.value());
-				structure.setMessage("Deleted Successfully");
-				return new ResponseEntity<>(structure, HttpStatus.ACCEPTED);
+			if (product == null) {
+				structure.setStatus(HttpStatus.NOT_FOUND.value());
+				structure.setMessage("Product Not Found");
+				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
 			}
 
+			if (merchant == null) {
+				structure.setStatus(HttpStatus.NOT_FOUND.value());
+				structure.setMessage("Merchant Not Found");
+				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+			}
+
+			// Check if the merchant owns the product
+			if (!merchant.getProducts().contains(product)) {
+				structure.setStatus(HttpStatus.FORBIDDEN.value());
+				structure.setMessage("Forbidden: Merchant does not own this product");
+				return new ResponseEntity<>(structure, HttpStatus.FORBIDDEN);
+			}
+
+			// Remove the product from the merchant's product list
+			merchant.getProducts().remove(product);
+			merchantDao.save(merchant);
+
+			// Remove the product from the database
+			merchantDao.removeProduct(product);
+
+			structure.setStatus(HttpStatus.ACCEPTED.value());
+			structure.setMessage("Deleted Successfully");
+			return new ResponseEntity<>(structure, HttpStatus.ACCEPTED);
 		}
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Product>> updateProduct(int id, HttpSession session) {
+	public ResponseEntity<ResponseStructure<Product>> updateProduct(int id, String authtoken, String email) {
+		ResponseStructure<Product> structure = new ResponseStructure<>();
 		Product product = merchantDao.findProductById(id);
-		if (session.getAttribute("merchant") == null) {
-			ResponseStructure<Product> structure = new ResponseStructure<>();
+		if (jwtUtil.isValidToken(authtoken)) {
 			structure.setData(null);
-			structure.setMessage("Login Again");
+			structure.setMessage("UNAUTHORIZED");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			ResponseStructure<Product> structure = new ResponseStructure<>();
 			if (product == null) {
 				structure.setData(null);
 				structure.setStatus(HttpStatus.NOT_FOUND.value());
@@ -336,37 +351,79 @@ public class MerhantService_implementation implements MerachantService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Product>> updateProduct(Product product, HttpSession session) {
+	public ResponseEntity<ResponseStructure<Product>> updateProduct(Product product, String authtoken, String email,
+	        int id, MultipartFile pic) throws IOException {
+	    ResponseStructure<Product> structure = new ResponseStructure<>();
 
-		if (session.getAttribute("merchant") == null) {
-			ResponseStructure<Product> structure = new ResponseStructure<>();
-			structure.setData(null);
-			structure.setMessage("Login Again");
-			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
-			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
-		} else {
-			ResponseStructure<Product> structure = new ResponseStructure<>();
-			Merchant merchant1 = (Merchant) session.getAttribute("merchant");
-			Merchant merchant = merchantDao.findByEmail(merchant1.getEmail());
-			session.setAttribute("merchant", merchant);
-			if (merchant.getProducts() == null || merchant.getProducts().isEmpty()) {
-				structure.setData(product);
-				structure.setMessage("Product Not Found");
-				structure.setStatus(HttpStatus.CREATED.value());
-				return new ResponseEntity<>(structure, HttpStatus.CREATED);
-			} else {
-				product.setImage(merchantDao.findProductById(product.getId()).getImage());
-				product.setStatus(merchantDao.findProductById(product.getId()).isStatus());
+	    // Check if the authentication token is valid
+	    if (jwtUtil.isValidToken(authtoken)) {
+	        structure.setData(null);
+	        structure.setMessage("UNAUTHORIZED");
+	        structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+	        return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+	    }
 
-				structure.setData(product);
-				structure.setMessage("Product Updated Successfully");
-				structure.setStatus(HttpStatus.CREATED.value());
-//				session.setAttribute("merchant", );
-				productRepository.save(product);
-				return new ResponseEntity<>(structure, HttpStatus.CREATED);
-			}
-		}
+	    // Find the merchant by email
+	    Merchant merchant = merchantDao.findByEmail(email);
+
+	    if (merchant == null) {
+	        structure.setData(null);
+	        structure.setMessage("Merchant Not Found");
+	        structure.setStatus(HttpStatus.NOT_FOUND.value());
+	        return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+	    }
+
+	    // Try to find an existing product with the specified id
+	    Product existingProduct = null;
+	    for (Product p : merchant.getProducts()) {
+	        if (p.getId() == id) {
+	            existingProduct = p;
+	            break;
+	        }
+	    }
+
+	    if (existingProduct == null) {
+	        // If the product doesn't exist, create a new one
+	        existingProduct = new Product();
+	        existingProduct.setId(id); // Set the ID if needed
+	        merchant.getProducts().add(existingProduct); // Add it to the merchant's products
+	    }
+
+	    // Update the product's fields with the new values
+	    existingProduct.setName(product.getName());
+	    existingProduct.setDescription(product.getDescription());
+	    existingProduct.setPrice(product.getPrice());
+	    existingProduct.setStock(product.getStock());
+
+	    // Check if a new image is provided in the 'pic' parameter
+	    if (pic != null && !pic.isEmpty()) {
+	        // Update the product's image with the new image
+	        existingProduct.setImage(pic.getBytes());
+	    }
+
+	    existingProduct.setStatus(product.isStatus());
+
+	    // Save the updated (or newly created) product to the database
+	    try {
+	        productRepository.save(existingProduct);
+	        System.out.println(existingProduct+"-------------->");
+	    } catch (Exception e) {
+	        e.printStackTrace(); // Log the exception for debugging
+	        structure.setData(null);
+	        structure.setMessage("Error occurred while saving the product.");
+	        structure.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	        return new ResponseEntity<>(structure, HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+
+	    structure.setData(existingProduct);
+	    structure.setMessage("Product Updated Successfully");
+	    structure.setStatus(HttpStatus.OK.value());
+
+	    return new ResponseEntity<>(structure, HttpStatus.OK);
 	}
+
+
+
 
 	@Override
 	public ResponseEntity<ResponseStructure<Merchant>> sendForgotOtp(String email) throws TemplateNotFoundException,
@@ -463,11 +520,32 @@ public class MerhantService_implementation implements MerachantService {
 	public ResponseEntity<ResponseStructure<Merchant>> setPassword(String email, String password) {
 		ResponseStructure<Merchant> structure = new ResponseStructure<>();
 		Merchant merchant = merchantDao.findByEmail(email);
-		merchant.setPassword(password);
+		merchant.setPassword(encoder.encode(password));
 		merchantDao.save(merchant);
 		structure.setData(merchant);
 		structure.setMessage("Password Reset Success");
 		structure.setStatus(HttpStatus.CREATED.value());
 		return new ResponseEntity<>(structure, HttpStatus.CREATED);
+	}
+
+	public ResponseEntity<ResponseStructure<Merchant>> logout(String token) {
+		ResponseStructure<Merchant> structure = new ResponseStructure<>();
+
+		if (isTokenInvalid(token)) {
+			structure.setStatus(HttpStatus.BAD_REQUEST.value());
+			structure.setMessage("Token is already invalidated");
+			return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+		}
+
+		// Mark the token as invalidated (add it to the list)
+		invalidatedTokens.add(token);
+
+		structure.setStatus(HttpStatus.OK.value());
+		structure.setMessage("Logged out successfully");
+		return new ResponseEntity<>(structure, HttpStatus.CREATED);
+	}
+
+	private boolean isTokenInvalid(String token) {
+		return invalidatedTokens.contains(token);
 	}
 }

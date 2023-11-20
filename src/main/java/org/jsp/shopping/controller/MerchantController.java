@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -25,6 +26,7 @@ import freemarker.core.ParseException;
 import freemarker.template.MalformedTemplateNameException;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateNotFoundException;
+import io.jsonwebtoken.Jwt;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
@@ -85,34 +87,35 @@ public class MerchantController {
 
 	@PostMapping("/login")
 	public ResponseEntity<ResponseStructure<Merchant>> login(@RequestParam String email, @RequestParam String password,
-			HttpSession session, HttpServletResponse response) {
+			HttpSession session) {
+//		System.out.println(session.getId());
 		return merhantService_implementation.login(email, password, session);
 	}
 
 	@PostMapping("/product-add")
-	public ResponseEntity<ResponseStructure<Merchant>> addProduct(HttpSession session, @ModelAttribute Product product,
-			@RequestParam MultipartFile pic) throws IOException {
-		return merhantService_implementation.addProduct(session, product, pic);
+	public ResponseEntity<ResponseStructure<Merchant>> addProduct(@ModelAttribute Product product,
+			@RequestParam MultipartFile pic,@RequestParam("token") String authtoken,@RequestParam String email) throws IOException {
+		return merhantService_implementation.addProduct(product, pic,authtoken,email);
 	}
 
 	@GetMapping("/product-view")
-	public ResponseEntity<ResponseStructure<List<Product>>> fetchallproduct(HttpSession session) {
-		return merhantService_implementation.fetchAllProducts(session);
+	public ResponseEntity<ResponseStructure<List<Product>>> fetchallproduct(@RequestParam("token") String authtoken,@RequestParam String email) {
+		return merhantService_implementation.fetchAllProducts(authtoken,email);
 	}
 
 	@GetMapping("/product-delete/{id}")
-	public ResponseEntity<ResponseStructure<Product>> deleteProduct(@PathVariable int id, HttpSession session) {
-		return merhantService_implementation.deleteProduct(id, session);
+	public ResponseEntity<ResponseStructure<Product>> deleteProduct(@PathVariable int id,@RequestParam("token") String authtoken,@RequestParam String email) {
+		return merhantService_implementation.deleteProduct(id, authtoken,email);
 	}
 
 	@GetMapping("/product-update/{id}")
-	public ResponseEntity<ResponseStructure<Product>> updateProduct(@PathVariable int id, HttpSession session) {
-		return merhantService_implementation.updateProduct(id, session);
+	public ResponseEntity<ResponseStructure<Product>> updateProduct(@PathVariable int id,@RequestParam("token") String authtoken,@RequestParam String email) {
+		return merhantService_implementation.updateProduct(id, authtoken,email);
 	}
 
 	@PostMapping("/product-update/{id}")
-	public ResponseEntity<ResponseStructure<Product>> updateProdut(@RequestBody Product product, HttpSession session) {
-		return merhantService_implementation.updateProduct(product, session);
+	public ResponseEntity<ResponseStructure<Product>> updateProdut(@ModelAttribute Product product,@RequestParam("token") String authtoken,@RequestParam String email,@PathVariable int id,	@RequestParam MultipartFile pic) throws IOException {
+		return merhantService_implementation.updateProduct(product, authtoken,email,id,pic);
 	}
 
 	@GetMapping("/resend-forgot-otp/{email}")
@@ -126,5 +129,10 @@ public class MerchantController {
 	public ResponseEntity<ResponseStructure<Merchant>> setPassword(@RequestParam String email,
 			@RequestParam String password) {
 		return merhantService_implementation.setPassword(email, password);
+	}
+
+	@GetMapping("/logout")
+	public ResponseEntity<ResponseStructure<Merchant>> logout(@ModelAttribute String token) {
+		return merhantService_implementation.logout(token);
 	}
 }

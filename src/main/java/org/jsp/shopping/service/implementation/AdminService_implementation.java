@@ -1,5 +1,6 @@
 package org.jsp.shopping.service.implementation;
 
+import java.util.Date;
 import java.util.List;
 
 import org.jsp.shopping.Repository.Admin_Repository;
@@ -12,6 +13,7 @@ import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Merchant;
 import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
+import org.jsp.shopping.helper.JwtUtil;
 import org.jsp.shopping.helper.ResponseStructure;
 import org.jsp.shopping.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +53,9 @@ public class AdminService_implementation implements AdminService {
 	@Autowired
 	private AuthenticationManager authenticationManager;
 
+	@Autowired
+	JwtUtil jwtUtil;
+
 	@Override
 	public ResponseEntity<ResponseStructure<Admin>> createAdmin(Admin admin) {
 		ResponseStructure<Admin> structure = new ResponseStructure<>();
@@ -72,7 +77,7 @@ public class AdminService_implementation implements AdminService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Admin>> login(String username, String password, HttpSession session) {
+	public ResponseEntity<ResponseStructure<Admin>> login(String username, String password) {
 		ResponseStructure<Admin> structure = new ResponseStructure<>();
 		Admin admin = admin_Repository.findByUsername(username);
 
@@ -85,8 +90,11 @@ public class AdminService_implementation implements AdminService {
 		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
 		if (userDetails != null) {
-			session.setAttribute("admin", admin);
-			structure.setData(admin);
+			long expirationMillis = System.currentTimeMillis() + 3600000; // 1 hour in milliseconds
+			Date expirationDate = new Date(expirationMillis);
+
+			String token = jwtUtil.generateToken_for_admin(userDetails, admin.getRole(), expirationDate);
+			structure.setData2(token);
 			structure.setMessage("Login Success");
 			structure.setStatus(HttpStatus.CREATED.value());
 		}
@@ -121,11 +129,12 @@ public class AdminService_implementation implements AdminService {
 //	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<List<Product>>> viewAllProducts(HttpSession session) {
+	public ResponseEntity<ResponseStructure<List<Product>>> viewAllProducts(String token) {
 		ResponseStructure<List<Product>> structure = new ResponseStructure<>();
-		if (session.getAttribute("admin") == null) {
+
+		if (jwtUtil.isValidToken(token)) {
 			structure.setData(null);
-			structure.setMessage("Login Again");
+			structure.setMessage("UNAUTHORIZED");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
@@ -136,21 +145,21 @@ public class AdminService_implementation implements AdminService {
 				structure.setStatus(HttpStatus.NOT_FOUND.value());
 				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
 			} else {
-				structure.setMessage("Product Found");
+				structure.setMessage("Products Found");
 				structure.setData(products);
-				structure.setStatus(HttpStatus.FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.FOUND);
+				structure.setStatus(HttpStatus.OK.value());
+				return new ResponseEntity<>(structure, HttpStatus.OK);
 			}
 		}
-
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<List<Product>>> changeStatus(int id, HttpSession session) {
+	public ResponseEntity<ResponseStructure<List<Product>>> changeStatus(int id, String token) {
 		ResponseStructure<List<Product>> structure = new ResponseStructure<>();
-		if (session.getAttribute("admin") == null) {
+
+		if (jwtUtil.isValidToken(token)) {
 			structure.setData(null);
-			structure.setMessage("Login Again");
+			structure.setMessage("UNAUTHORIZED");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
@@ -177,11 +186,11 @@ public class AdminService_implementation implements AdminService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<List<Merchant>>> viewallmerchant(HttpSession session) {
+	public ResponseEntity<ResponseStructure<List<Merchant>>> viewallmerchant(String token) {
 		ResponseStructure<List<Merchant>> structure = new ResponseStructure<>();
-		if (session.getAttribute("admin") == null) {
+		if (jwtUtil.isValidToken(token)) {
 			structure.setData(null);
-			structure.setMessage("Login Again");
+			structure.setMessage("UNAUTHORIZED");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
@@ -194,22 +203,23 @@ public class AdminService_implementation implements AdminService {
 			} else {
 				structure.setData(merchants);
 				structure.setMessage("Merchants Data");
-				structure.setStatus(HttpStatus.FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.FOUND);
+				structure.setStatus(HttpStatus.OK.value());
+				return new ResponseEntity<>(structure, HttpStatus.OK);
 			}
 		}
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<List<Customer>>> viewallcustomer(HttpSession session) {
+	public ResponseEntity<ResponseStructure<List<Customer>>> viewallcustomer(String token) {
 		ResponseStructure<List<Customer>> structure = new ResponseStructure<>();
-		if (session.getAttribute("admin") == null) {
+		if (jwtUtil.isValidToken(token)) {
 			structure.setData(null);
-			structure.setMessage("Login Again");
+			structure.setMessage("UNAUTHORIZED");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
 			List<Customer> customers = customerRepository.findAll();
+			System.out.println(customers);
 			if (customers.isEmpty()) {
 				structure.setData(null);
 				structure.setMessage("No Customers Data");
@@ -218,51 +228,66 @@ public class AdminService_implementation implements AdminService {
 			} else {
 				structure.setData(customers);
 				structure.setMessage("Customers Data");
-				structure.setStatus(HttpStatus.FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.FOUND);
+				structure.setStatus(HttpStatus.OK.value());
+				return new ResponseEntity<>(structure, HttpStatus.OK);
 			}
 		}
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Payment>> addpayment(HttpSession session, Payment payment) {
+	public ResponseEntity<ResponseStructure<Payment>> addpayment(String token, Payment payment) {
 		Payment payment2 = paymentRepository.findByName(payment.getName());
 		ResponseStructure<Payment> structure = new ResponseStructure<>();
-		if (session.getAttribute("admin") == null) {
+		if (jwtUtil.isValidToken(token)) {
 			structure.setData(null);
-			structure.setMessage("Login Again");
+			structure.setMessage("UNAUTHORIZED");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			if (payment2 == null) {
+			int paymentCount = paymentRepository.countByName(payment.getName());
+			if (paymentCount >= 2) {
+				structure.setData(null);
+				structure.setMessage("Cannot add more than 2 payment methods with the same name");
+				structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
+				return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
+			} else if (payment2 == null) {
 				paymentRepository.save(payment);
 				structure.setData(payment);
-				structure.setMessage("Payment method added succesfully");
+				structure.setMessage("Payment method added successfully");
 				structure.setStatus(HttpStatus.CREATED.value());
 				return new ResponseEntity<>(structure, HttpStatus.CREATED);
 			} else {
 				structure.setData(null);
-				structure.setMessage("payment Method Already Exits");
-				structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
-				return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
+				structure.setMessage("Payment Method Already Exists");
+				structure.setStatus(HttpStatus.CONFLICT.value());
+				return new ResponseEntity<>(structure, HttpStatus.CONFLICT);
 			}
 		}
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<List<Payment>>> viewallPayment(HttpSession session) {
+	public ResponseEntity<ResponseStructure<List<Payment>>> viewallPayment(String token) {
 		ResponseStructure<List<Payment>> structure = new ResponseStructure<>();
 		List<Payment> payment = paymentRepository.findAll();
-		if (session.getAttribute("admin") == null) {
+		if (jwtUtil.isValidToken(token)) {
 			structure.setData(null);
-			structure.setMessage("Login Again");
+			structure.setMessage("UNAUTHORIZED");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
 			structure.setData(payment);
 			structure.setMessage("All Payment Method");
-			structure.setStatus(HttpStatus.FOUND.value());
-			return new ResponseEntity<>(structure, HttpStatus.FOUND);
+			structure.setStatus(HttpStatus.OK.value());
+			return new ResponseEntity<>(structure, HttpStatus.OK);
 		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<Admin>> logout(HttpSession httpSession) {
+		httpSession.invalidate();
+		ResponseStructure<Admin> structure = new ResponseStructure<>();
+		structure.setStatus(HttpStatus.OK.value());
+		structure.setMessage("Logged out successfully");
+		return new ResponseEntity<>(structure, HttpStatus.CREATED);
 	}
 }

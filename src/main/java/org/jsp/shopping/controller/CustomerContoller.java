@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Item;
+import org.jsp.shopping.dto.Merchant;
 import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
 import org.jsp.shopping.dto.ShoppingOrder;
@@ -40,21 +41,26 @@ public class CustomerContoller {
 		return customerService.signup(customer, date);
 	}
 
-	@GetMapping("/verify-otp/{email}/{token}")
+	@GetMapping("/verify-link/{email}/{token}")
 	public ResponseEntity<ResponseStructure<Customer>> verify_link(@PathVariable String email,
 			@PathVariable String token) {
 		return customerService.verify_link(email, token);
 	}
 
+	@GetMapping("/resend_link/{email}")
+	public ResponseEntity<ResponseStructure<Customer>> resend_link(@PathVariable String email) throws Exception {
+		return customerService.resend_link(email);
+	}
+
 	@PostMapping("/login")
-	public ResponseEntity<ResponseStructure<Customer>> login(@RequestParam String email, @RequestParam String password,
-			HttpSession session) {
-		return customerService.login(email, password, session);
+	public ResponseEntity<ResponseStructure<Customer>> login(@RequestParam String email,
+			@RequestParam String password) {
+		return customerService.login(email, password);
 	}
 
 	@GetMapping("/products-view")
-	public ResponseEntity<ResponseStructure<List<Product>>> view_products(HttpSession session) {
-		return customerService.view_products(session);
+	public ResponseEntity<ResponseStructure<List<Product>>> view_products() {
+		return customerService.view_products();
 	}
 
 	@GetMapping("/cart-add/{id}")
@@ -141,5 +147,10 @@ public class CustomerContoller {
 	public ResponseEntity<ResponseStructure<Customer>> setpassword(@RequestParam String email,
 			@RequestParam String password) {
 		return customerService.setpassword(email, password);
+	}
+
+	@GetMapping("/logout")
+	public ResponseEntity<ResponseStructure<Customer>> logout(HttpSession httpSession) {
+		return customerService.logout(httpSession);
 	}
 }

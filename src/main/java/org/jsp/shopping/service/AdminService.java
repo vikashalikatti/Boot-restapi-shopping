@@ -14,20 +14,22 @@ import jakarta.servlet.http.HttpSession;
 
 public interface AdminService {
 
-	ResponseEntity<ResponseStructure<Admin>> login(String username, String password, HttpSession session);
+	ResponseEntity<ResponseStructure<Admin>> login(String username, String password);
 
 	ResponseEntity<ResponseStructure<Admin>> createAdmin(Admin admin);
 
-	ResponseEntity<ResponseStructure<List<Product>>> viewAllProducts(HttpSession session);
+	ResponseEntity<ResponseStructure<List<Product>>> viewAllProducts(String token);
 
-	ResponseEntity<ResponseStructure<List<Product>>> changeStatus(int id, HttpSession session);
+	ResponseEntity<ResponseStructure<List<Product>>> changeStatus(int id, String token);
 
-	ResponseEntity<ResponseStructure<List<Merchant>>> viewallmerchant(HttpSession session);
+	ResponseEntity<ResponseStructure<List<Merchant>>> viewallmerchant(String token);
 
-	ResponseEntity<ResponseStructure<List<Customer>>> viewallcustomer(HttpSession session);
+	ResponseEntity<ResponseStructure<List<Customer>>> viewallcustomer(String token);
 
-	ResponseEntity<ResponseStructure<Payment>> addpayment(HttpSession session, Payment payment);
+	ResponseEntity<ResponseStructure<Payment>> addpayment(String token, Payment payment);
 
-	ResponseEntity<ResponseStructure<List<Payment>>> viewallPayment(HttpSession session);
+	ResponseEntity<ResponseStructure<List<Payment>>> viewallPayment(String token);
+
+	ResponseEntity<ResponseStructure<Admin>> logout(HttpSession httpSession);
 
 }

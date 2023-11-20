@@ -21,9 +21,9 @@ public interface CustomerService {
 
 	ResponseEntity<ResponseStructure<Customer>> verify_link(String email, String token);
 
-	ResponseEntity<ResponseStructure<Customer>> login(String email, String password, HttpSession session);
+	ResponseEntity<ResponseStructure<Customer>> login(String email, String password);
 
-	ResponseEntity<ResponseStructure<List<Product>>> view_products(HttpSession session);
+	ResponseEntity<ResponseStructure<List<Product>>> view_products();
 
 	ResponseEntity<ResponseStructure<Product>> addCart(HttpSession session, int id);
 
@@ -56,5 +56,9 @@ public interface CustomerService {
 	ResponseEntity<ResponseStructure<Customer>> resetPassword(String email, String token);
 
 	ResponseEntity<ResponseStructure<Customer>> setpassword(String email, String password);
+
+	ResponseEntity<ResponseStructure<Customer>> logout(HttpSession httpSession);
+
+	ResponseEntity<ResponseStructure<Customer>> resend_link(String email)throws Exception;
 
 }

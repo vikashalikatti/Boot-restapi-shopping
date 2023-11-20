@@ -3,6 +3,7 @@ package org.jsp.shopping.service.implementation;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.json.JSONObject;
@@ -14,6 +15,7 @@ import org.jsp.shopping.Repository.ShoppingOrderRepository;
 import org.jsp.shopping.Repository.WishlistRepository;
 import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Item;
+import org.jsp.shopping.dto.Merchant;
 import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
 import org.jsp.shopping.dto.ShoppingCart;
@@ -122,21 +124,55 @@ public class CustomerService_implementation implements CustomerService {
 	public ResponseEntity<ResponseStructure<Customer>> verify_link(String email, String token) {
 		ResponseStructure<Customer> structure = new ResponseStructure<>();
 		Customer customer = customerRepository.findByEmail(email);
-
 		if (customer != null) {
-			customer.setStatus(true);
-			customer.setToken(null);
-			customerRepository.save(customer);
+			if (!jwtUtil.isValidToken(token)) {
+				customer.setStatus(true);
+				customer.setToken(null);
+				customerRepository.save(customer);
 
-			structure.setData(customer);
-			structure.setMessage("Account Created Successfully");
-			structure.setStatus(HttpStatus.CREATED.value());
-			return new ResponseEntity<>(structure, HttpStatus.CREATED);
+				structure.setData(customer);
+				structure.setMessage("Account Created Successfully");
+				structure.setStatus(HttpStatus.CREATED.value());
+				return new ResponseEntity<>(structure, HttpStatus.CREATED);
+			} else {
+				structure.setData(null);
+				structure.setMessage("Incorrect or expired token");
+				structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
+				return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
+			}
 		} else {
 			structure.setData(null);
-			structure.setMessage("Incorrect link");
+			structure.setMessage("Incorrect email");
 			structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
 			return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<Customer>> resend_link(String email) throws Exception {
+		Customer customer = customerRepository.findByEmail(email);
+		ResponseStructure<Customer> structure = new ResponseStructure<>();
+		if (customer == null) {
+			structure.setData(null);
+			structure.setMessage("Email dosen't exits");
+			structure.setStatus(HttpStatus.NOT_FOUND.value());
+			return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+		} else {
+			String token = jwtUtil.generateJwtTokenForCustomer(customer, Duration.ofMinutes(5));
+			customer.setToken(token);
+			customerRepository.save(customer);
+			if (mail.sendResetLink(customer)) {
+				Customer customer2 = customerRepository.save(customer);
+				structure.setData(customer2);
+				structure.setMessage("Verification Link send to Email Succesfull");
+				structure.setStatus(HttpStatus.OK.value());
+				return new ResponseEntity<>(structure, HttpStatus.OK);
+			} else {
+				structure.setData(null);
+				structure.setMessage("Something went wrong");
+				structure.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+				return new ResponseEntity<>(structure, HttpStatus.INTERNAL_SERVER_ERROR);
+			}
 		}
 	}
 
@@ -150,11 +186,9 @@ public class CustomerService_implementation implements CustomerService {
 			structure.setStatus(HttpStatus.NOT_FOUND.value());
 			return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
 		} else {
-//			String token = "EKART" + new Random().nextInt(10000, 999999);
 			String token = jwtUtil.generateJwtTokenForCustomer(customer, Duration.ofMinutes(5));
 			customer.setToken(token);
 			customerRepository.save(customer);
-			// logic for sending the mail
 			if (mail.sendResetLink(customer)) {
 				Customer customer2 = customerRepository.save(customer);
 				structure.setData(customer2);
@@ -212,7 +246,7 @@ public class CustomerService_implementation implements CustomerService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Customer>> login(String email, String password, HttpSession session) {
+	public ResponseEntity<ResponseStructure<Customer>> login(String email, String password) {
 		ResponseStructure<Customer> structure = new ResponseStructure<>();
 		Customer customer = customerRepository.findByEmail(email);
 //		if (customer == null) {
@@ -231,8 +265,11 @@ public class CustomerService_implementation implements CustomerService {
 //		System.out.println(userDetails + "---------------------------------
 		if (userDetails != null) {
 			if (customer.isStatus()) {
-				session.setAttribute("customer", customer);
-				structure.setData(customer);
+				long expirationMillis = System.currentTimeMillis() + 3600000; // 1 hour in milliseconds
+				Date expirationDate = new Date(expirationMillis);
+
+				String token = jwtUtil.generateToken(userDetails, customer.getRole(), expirationDate);
+				structure.setData2(token);
 				structure.setMessage("Login Success");
 				structure.setStatus(HttpStatus.CREATED.value());
 				return new ResponseEntity<>(structure, HttpStatus.CREATED);
@@ -280,26 +317,19 @@ public class CustomerService_implementation implements CustomerService {
 //	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<List<Product>>> view_products(HttpSession session) {
+	public ResponseEntity<ResponseStructure<List<Product>>> view_products() {
 		ResponseStructure<List<Product>> structure = new ResponseStructure<>();
 		List<Product> products = productRepository.findByStatus(true);
-		if (session.getAttribute("customer") == null) {
+		if (products.isEmpty()) {
 			structure.setData(null);
-			structure.setMessage("Logain Again");
-			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
-			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+			structure.setMessage("No Products Present");
+			structure.setStatus(HttpStatus.NOT_FOUND.value());
+			return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
 		} else {
-			if (products.isEmpty()) {
-				structure.setData(null);
-				structure.setMessage("No Products Present");
-				structure.setStatus(HttpStatus.NOT_FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
-			} else {
-				structure.setData(products);
-				structure.setMessage("Products");
-				structure.setStatus(HttpStatus.FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.FOUND);
-			}
+			structure.setData(products);
+			structure.setMessage("Products");
+			structure.setStatus(HttpStatus.OK.value());
+			return new ResponseEntity<>(structure, HttpStatus.OK);
 		}
 	}
 
@@ -758,12 +788,12 @@ public class CustomerService_implementation implements CustomerService {
 				object.put("currency", "INR");
 				object.put("amount", total * 100);
 
-				RazorpayClient client = new RazorpayClient();
+				RazorpayClient client = new RazorpayClient("rzp_test_a5jX27qK8Szlyb", "NmEibVAHSdK5qvYDrhLeUjZw");
 				Order order1 = client.orders.create(object);
 				order.setStatus(order1.get("status"));
 				order.setCurrency("INR");
 				order.setOrderId(order1.get("id"));
-				order.setPayment_key();
+				order.setPayment_key("rzp_test_a5jX27qK8Szlyb");
 				order.setCompany_name("E-Kart");
 				structure.setMessage("Order created successfully");
 				structure.setData(order);
@@ -789,6 +819,15 @@ public class CustomerService_implementation implements CustomerService {
 				return new ResponseEntity<>(structure, HttpStatus.CREATED);
 			}
 		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<Customer>> logout(HttpSession httpSession) {
+		httpSession.invalidate();
+		ResponseStructure<Customer> structure = new ResponseStructure<>();
+		structure.setStatus(HttpStatus.OK.value());
+		structure.setMessage("Logged out successfully");
+		return new ResponseEntity<>(structure, HttpStatus.CREATED);
 	}
 
 }
