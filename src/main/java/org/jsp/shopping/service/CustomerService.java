@@ -17,7 +17,7 @@ import jakarta.servlet.http.HttpSession;
 
 public interface CustomerService {
 
-	ResponseEntity<ResponseStructure<Customer>> signup(Customer customer, String date)throws Exception;
+	ResponseEntity<ResponseStructure<Customer>> signup(Customer customer, String date) throws Exception;
 
 	ResponseEntity<ResponseStructure<Customer>> verify_link(String email, String token);
 
@@ -25,13 +25,13 @@ public interface CustomerService {
 
 	ResponseEntity<ResponseStructure<List<Product>>> view_products();
 
-	ResponseEntity<ResponseStructure<Product>> addCart(HttpSession session, int id);
+	ResponseEntity<ResponseStructure<Product>> addCart(String email, String token, int id);
 
-	ResponseEntity<ResponseStructure<List<Item>>> viewCart(HttpSession session);
+	ResponseEntity<ResponseStructure<List<Item>>> viewCart(String email, String token);
 
-	ResponseEntity<ResponseStructure<List<Item>>> removeFromCart(HttpSession session, int id);
+	ResponseEntity<ResponseStructure<List<Item>>> removeFromCart(String email, String token, int id);
 
-	ResponseEntity<ResponseStructure<List<Wishlist>>> create_wishlist(HttpSession session, int id, String name);
+	ResponseEntity<ResponseStructure<List<Wishlist>>> create_wishlist(String email, String token, int id, String name);
 
 	ResponseEntity<ResponseStructure<List<Wishlist>>> view_wishlist(HttpSession session);
 
@@ -49,7 +49,8 @@ public interface CustomerService {
 
 	ResponseEntity<ResponseStructure<List<ShoppingOrder>>> viewOrders(HttpSession session);
 
-	ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(HttpSession session, int pid, String address)throws RazorpayException;
+	ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(HttpSession session, int pid, String address)
+			throws RazorpayException;
 
 	ResponseEntity<ResponseStructure<Customer>> forgotLink(String email) throws Exception;
 
@@ -59,6 +60,6 @@ public interface CustomerService {
 
 	ResponseEntity<ResponseStructure<Customer>> logout(HttpSession httpSession);
 
-	ResponseEntity<ResponseStructure<Customer>> resend_link(String email)throws Exception;
+	ResponseEntity<ResponseStructure<Customer>> resend_link(String email) throws Exception;
 
 }

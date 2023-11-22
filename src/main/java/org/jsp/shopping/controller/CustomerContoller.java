@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Item;
-import org.jsp.shopping.dto.Merchant;
 import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
 import org.jsp.shopping.dto.ShoppingOrder;
@@ -12,9 +11,7 @@ import org.jsp.shopping.dto.Wishlist;
 import org.jsp.shopping.helper.ResponseStructure;
 import org.jsp.shopping.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -64,24 +61,24 @@ public class CustomerContoller {
 	}
 
 	@GetMapping("/cart-add/{id}")
-	public ResponseEntity<ResponseStructure<Product>> addCart(HttpSession session, @PathVariable int id) {
-		return customerService.addCart(session, id);
+	public ResponseEntity<ResponseStructure<Product>> addCart(@RequestParam String email,@RequestParam String token, @PathVariable int id) {
+		return customerService.addCart(email,token, id);
 	}
 
 	@GetMapping("/cart-view")
-	public ResponseEntity<ResponseStructure<List<Item>>> viewCart(HttpSession session) {
-		return customerService.viewCart(session);
+	public ResponseEntity<ResponseStructure<List<Item>>> viewCart(@RequestParam String email,@RequestParam String token) {
+		return customerService.viewCart(email,token);
 	}
 
 	@GetMapping("/cart-remove/{id}")
-	public ResponseEntity<ResponseStructure<List<Item>>> removeFromCart(HttpSession session, @PathVariable int id) {
-		return customerService.removeFromCart(session, id);
+	public ResponseEntity<ResponseStructure<List<Item>>> removeFromCart(@RequestParam String email,@RequestParam String token, @PathVariable int id) {
+		return customerService.removeFromCart(email, token,id);
 	}
 
 	@PostMapping("/wishlist-create/{id}")
-	public ResponseEntity<ResponseStructure<List<Wishlist>>> create_wishlist(HttpSession session, @PathVariable int id,
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> create_wishlist(@RequestParam String email,@RequestParam String token, @PathVariable int id,
 			@RequestParam String name) {
-		return customerService.create_wishlist(session, id, name);
+		return customerService.create_wishlist(email,token, id, name);
 	}
 
 	@GetMapping("/wishlist-view")

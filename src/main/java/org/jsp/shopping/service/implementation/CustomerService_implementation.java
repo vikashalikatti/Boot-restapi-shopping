@@ -15,7 +15,6 @@ import org.jsp.shopping.Repository.ShoppingOrderRepository;
 import org.jsp.shopping.Repository.WishlistRepository;
 import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Item;
-import org.jsp.shopping.dto.Merchant;
 import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
 import org.jsp.shopping.dto.ShoppingCart;
@@ -334,12 +333,11 @@ public class CustomerService_implementation implements CustomerService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Product>> addCart(HttpSession session, int id) {
-		Customer customer = (Customer) session.getAttribute("customer");
+	public ResponseEntity<ResponseStructure<Product>> addCart(String email, String token, int id) {
+		Customer customer = customerRepository.findByEmail(email);
 		ResponseStructure<Product> structure = new ResponseStructure<>();
-		if (session.getAttribute("customer") == null) {
-			structure.setData(null);
-			structure.setMessage("Logain Again");
+		if (jwtUtil.isValidToken(token)) {
+			structure.setMessage("Unauthorized");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
@@ -390,13 +388,11 @@ public class CustomerService_implementation implements CustomerService {
 
 				product.setStock(product.getStock() - 1);
 				productRepository.save(product);
-
-				session.removeAttribute("customer");
-				session.setAttribute("customer", customerRepository.save(customer));
+				customerRepository.save(customer);
 				structure.setData(product);
 				structure.setMessage("Product Added Successful");
-				structure.setStatus(HttpStatus.ACCEPTED.value());
-				return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+				structure.setStatus(HttpStatus.OK.value());
+				return new ResponseEntity<>(structure, HttpStatus.OK);
 			} else {
 				structure.setData(null);
 				structure.setMessage("Out of Stock");
@@ -407,12 +403,11 @@ public class CustomerService_implementation implements CustomerService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<List<Item>>> viewCart(HttpSession session) {
-		Customer customer = (Customer) session.getAttribute("customer");
+	public ResponseEntity<ResponseStructure<List<Item>>> viewCart(String email, String token) {
+		Customer customer = customerRepository.findByEmail(email);
 		ResponseStructure<List<Item>> structure = new ResponseStructure<>();
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Logain Again");
+		if (jwtUtil.isValidToken(token)) {
+			structure.setMessage("Unauthorized");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
@@ -422,24 +417,23 @@ public class CustomerService_implementation implements CustomerService {
 				structure.setData(null);
 				structure.setMessage("No Items in cart");
 				structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
-				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+				return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
 			} else {
 				List<Item> items = customer.getShoppingCart().getItems();
 				structure.setData(items);
 				structure.setMessage("Items");
-				structure.setStatus(HttpStatus.FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.FOUND);
+				structure.setStatus(HttpStatus.OK.value());
+				return new ResponseEntity<>(structure, HttpStatus.OK);
 			}
 		}
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<List<Item>>> removeFromCart(HttpSession session, int id) {
-		Customer customer = (Customer) session.getAttribute("customer");
+	public ResponseEntity<ResponseStructure<List<Item>>> removeFromCart(String email, String token, int id) {
+		Customer customer = customerRepository.findByEmail(email);
 		ResponseStructure<List<Item>> structure = new ResponseStructure<>();
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Logain Again");
+		if (jwtUtil.isValidToken(token)) {
+			structure.setMessage("Unauthorized");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
@@ -467,20 +461,19 @@ public class CustomerService_implementation implements CustomerService {
 			Product product = productRepository.findByName(item.getName());
 			product.setStock(product.getStock() + 1);
 			productRepository.save(product);
-
-			session.removeAttribute("customer");
-			session.setAttribute("customer", customerRepository.save(customer));
+			customerRepository.save(customer);
 
 			structure.setData(items);
 			structure.setMessage("Product Removed from Cart Success");
 			structure.setStatus(HttpStatus.OK.value());
-			return new ResponseEntity<>(structure, HttpStatus.FOUND);
+			return new ResponseEntity<>(structure, HttpStatus.OK);
 		}
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<List<Wishlist>>> create_wishlist(HttpSession session, int id, String name) {
-		Customer customer = (Customer) session.getAttribute("customer");
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> create_wishlist(String email, String token, int id,
+			String name) {
+		Customer customer = customerRepository.findByEmail(email);
 		ResponseStructure<List<Wishlist>> structure = new ResponseStructure<>();
 		if (customer == null) {
 			structure.setData(null);
@@ -506,25 +499,22 @@ public class CustomerService_implementation implements CustomerService {
 					list.add(wishlist);
 
 					customer.setWishlists(list);
-
-					session.removeAttribute("customer");
-					session.setAttribute("customer", customerRepository.save(customer));
+					customerRepository.save(customer);
 					structure.setData(list);
 					structure.setMessage("WishList Creation Success and Product added to Wishlist");
-					structure.setStatus(HttpStatus.CREATED.value());
-					return new ResponseEntity<>(structure, HttpStatus.CREATED);
+					structure.setStatus(HttpStatus.OK.value());
+					return new ResponseEntity<>(structure, HttpStatus.OK);
 
 				} else {
 
 					list.add(wishlist);
 
 					customer.setWishlists(list);
-					session.removeAttribute("customer");
-					session.setAttribute("customer", customerRepository.save(customer));
+					customerRepository.save(customer);
 					structure.setData(list);
 					structure.setMessage("WishList Creation Success");
-					structure.setStatus(HttpStatus.CREATED.value());
-					return new ResponseEntity<>(structure, HttpStatus.CREATED);
+					structure.setStatus(HttpStatus.OK.value());
+					return new ResponseEntity<>(structure, HttpStatus.OK);
 				}
 			} else {
 				structure.setData(null);
