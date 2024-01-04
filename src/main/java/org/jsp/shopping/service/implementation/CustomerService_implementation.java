@@ -345,7 +345,7 @@ public class CustomerService_implementation implements CustomerService {
 			if (product.getStock() >= 1) {
 
 				ShoppingCart cart = customer.getShoppingCart();
-				System.out.println(cart);
+
 				if (cart == null) {
 					cart = this.shoppingCart;
 				}
@@ -528,7 +528,7 @@ public class CustomerService_implementation implements CustomerService {
 	@Override
 	public ResponseEntity<ResponseStructure<List<Wishlist>>> view_wishlist(String email, String token) {
 		Customer customer = customerRepository.findByEmail(email);
-		System.out.println(customer);
+
 		ResponseStructure<List<Wishlist>> structure = new ResponseStructure<>();
 		if (jwtUtil.isValidToken(token)) {
 			structure.setMessage("Unauthorized");
@@ -651,54 +651,69 @@ public class CustomerService_implementation implements CustomerService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Wishlist>> deleteWishlist(int wid, HttpSession session) {
-		Customer customer = (Customer) session.getAttribute("customer");
+	public ResponseEntity<ResponseStructure<Wishlist>> deleteWishlist(int wid, String token, String email) {
+
+		Customer customer = customerRepository.findByEmail(email);
 		ResponseStructure<Wishlist> structure = new ResponseStructure<>();
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Logain Again");
+		if (jwtUtil.isValidToken(token)) {
+			structure.setMessage("Unauthorized");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			Wishlist wishlist = wishlistRepository.findById(wid).orElse(null);
-			Wishlist wishlist2 = null;
-			for (Wishlist wishlist3 : customer.getWishlists()) {
-				if (wishlist3.getName().equals(wishlist.getName())) {
-					wishlist2 = wishlist3;
+			if (customer == null) {
+				structure.setData(null);
+				structure.setMessage("No customer found");
+				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+			} else {
+				Wishlist wishlist = wishlistRepository.findById(wid).orElse(null);
+				Wishlist wishlist2 = null;
+				for (Wishlist wishlist3 : customer.getWishlists()) {
+					if (wishlist3.getName().equals(wishlist.getName())) {
+						wishlist2 = wishlist3;
+					}
 				}
-			}
 
-			customer.getWishlists().remove(wishlist2);
-			session.setAttribute("customer", customerRepository.save(customer));
-			wishlistRepository.delete(wishlist);
-			structure.setData(wishlist);
-			structure.setMessage("Wishlist deleted Success");
-			structure.setStatus(HttpStatus.OK.value());
-			return new ResponseEntity<>(structure, HttpStatus.OK);
+				customer.getWishlists().remove(wishlist2);
+				wishlistRepository.delete(wishlist);
+				customerRepository.save(customer);
+				structure.setData(wishlist);
+				structure.setMessage("Wishlist deleted Success");
+				structure.setStatus(HttpStatus.OK.value());
+				return new ResponseEntity<>(structure, HttpStatus.OK);
+			}
 		}
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<List<Payment>>> checkPayment(HttpSession session) {
-		Customer customer = (Customer) session.getAttribute("customer");
+	public ResponseEntity<ResponseStructure<List<Payment>>> checkPayment(String token, String email) {
+
 		ResponseStructure<List<Payment>> structure = new ResponseStructure<>();
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Logain Again");
+		Customer customer = customerRepository.findByEmail(email);
+		if (jwtUtil.isValidToken(token)) {
+			structure.setMessage("Unauthorized");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			List<Payment> payments = paymentRepository.findAll();
-			if (payments.isEmpty()) {
+			if (customer == null) {
 				structure.setData(null);
-				structure.setMessage("Sorry you can not place order, There is an internal error try after some time");
-				structure.setStatus(HttpStatus.NOT_FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+				structure.setMessage("No customer found");
+				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
 			} else {
-				structure.setData(payments);
-				structure.setMessage("List of Payments");
-				structure.setStatus(HttpStatus.ALREADY_REPORTED.value());
-				return new ResponseEntity<>(structure, HttpStatus.ALREADY_REPORTED);
+				List<Payment> payments = paymentRepository.findAll();
+				if (payments.isEmpty()) {
+					structure.setData(null);
+					structure.setMessage(
+							"Sorry you can not place order, There is an internal error try after some time");
+					structure.setStatus(HttpStatus.BAD_REQUEST.value());
+					return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+				} else {
+					structure.setData(payments);
+					structure.setMessage("List of Payments");
+					structure.setStatus(HttpStatus.OK.value());
+					return new ResponseEntity<>(structure, HttpStatus.OK);
+				}
 			}
 		}
 	}

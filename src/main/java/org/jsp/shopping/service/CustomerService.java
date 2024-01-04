@@ -35,15 +35,15 @@ public interface CustomerService {
 
 	ResponseEntity<ResponseStructure<List<Wishlist>>> view_wishlist(String email, String token);
 
-	ResponseEntity<ResponseStructure<List<Wishlist>>> viewWishlistProducts(String token, int id,String email);
+	ResponseEntity<ResponseStructure<List<Wishlist>>> viewWishlistProducts(String token, int id, String email);
 
 	ResponseEntity<ResponseStructure<Wishlist>> addToWishList(int wid, int pid, String token, String email);
 
-	ResponseEntity<ResponseStructure<Wishlist>> removeFromWishList(int wid, int pid,String token, String email);
+	ResponseEntity<ResponseStructure<Wishlist>> removeFromWishList(int wid, int pid, String token, String email);
 
-	ResponseEntity<ResponseStructure<Wishlist>> deleteWishlist(int wid, HttpSession session);
+	ResponseEntity<ResponseStructure<Wishlist>> deleteWishlist(int wid, String token, String email);
 
-	ResponseEntity<ResponseStructure<List<Payment>>> checkPayment(HttpSession session);
+	ResponseEntity<ResponseStructure<List<Payment>>> checkPayment(String token, String email);
 
 	ResponseEntity<ResponseStructure<Customer>> checkAddress(HttpSession session, int pid);
 

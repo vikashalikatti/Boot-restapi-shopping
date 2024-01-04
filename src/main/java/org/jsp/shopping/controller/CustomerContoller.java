@@ -108,18 +108,18 @@ public class CustomerContoller {
 	}
 
 	@GetMapping("/wishlist-delete/{wid}")
-	public ResponseEntity<ResponseStructure<Wishlist>> deleteWishlist(@PathVariable int wid, HttpSession session) {
-		return customerService.deleteWishlist(wid, session);
+	public ResponseEntity<ResponseStructure<Wishlist>> deleteWishlist(@PathVariable int wid, @RequestParam String token,@RequestParam String email) {
+		return customerService.deleteWishlist(wid, token,email);
 	}
 
 	@GetMapping("/placeorder")
-	public ResponseEntity<ResponseStructure<List<Payment>>> checkPayment(HttpSession session) {
-		return customerService.checkPayment(session);
+	public ResponseEntity<ResponseStructure<List<Payment>>> checkPayment(@RequestParam String token,@RequestParam String email) {
+		return customerService.checkPayment(token,email);
 	}
 
 	@PostMapping("/placeorder")
-	public ResponseEntity<ResponseStructure<Customer>> checkAddress(HttpSession session, @RequestParam int pid) {
-		return customerService.checkAddress(session, pid);
+	public ResponseEntity<ResponseStructure<Customer>> checkAddress(HttpSession session, @RequestParam int payid) {
+		return customerService.checkAddress(session, payid);
 	}
 
 	@PostMapping("/submitorder")
