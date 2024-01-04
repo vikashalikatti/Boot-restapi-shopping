@@ -805,7 +805,7 @@ public class CustomerService_implementation implements CustomerService {
 				object.put("currency", "INR");
 				object.put("amount", total * 100);
 
-				RazorpayClient client = new RazorpayClient("rzp_test_a5jX27qK8Szlyb", "NmEibVAHSdK5qvYDrhLeUjZw");
+				RazorpayClient client = new RazorpayClient("your razorpayid","your razorpaykey");
 				Order order1 = client.orders.create(object);
 				order.setStatus(order1.get("status"));
 				order.setCurrency("INR");
