@@ -75,6 +75,10 @@ public class CustomerContoller {
 		return customerService.removeFromCart(email, token,id);
 	}
 
+	@GetMapping("/wishlist-add/{id}")
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> addToWishlist(@RequestParam String email,@RequestParam String token,@PathVariable int id){
+		return customerService.addToWishlist(email,token,id);
+	}
 	@PostMapping("/wishlist-create/{id}")
 	public ResponseEntity<ResponseStructure<List<Wishlist>>> create_wishlist(@RequestParam String email,@RequestParam String token, @PathVariable int id,
 			@RequestParam String name) {
@@ -82,25 +86,25 @@ public class CustomerContoller {
 	}
 
 	@GetMapping("/wishlist-view")
-	public ResponseEntity<ResponseStructure<List<Wishlist>>> view_wishlist(HttpSession session) {
-		return customerService.view_wishlist(session);
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> view_wishlist(@RequestParam String email,@RequestParam String token) {
+		return customerService.view_wishlist(email,token);
 	}
 
 	@GetMapping("/wishlist/product-view/{id}")
-	public ResponseEntity<ResponseStructure<Wishlist>> viewWishlistProducts(@PathVariable int id, HttpSession session) {
-		return customerService.viewWishlistProducts(session, id);
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> viewWishlistProducts(@PathVariable int id, @RequestParam String token,@RequestParam String email) {
+		return customerService.viewWishlistProducts(token, id,email);
 	}
 
 	@GetMapping("/wishlist-add/{wid}/{pid}")
 	public ResponseEntity<ResponseStructure<Wishlist>> addToWishList(@PathVariable int wid, @PathVariable int pid,
-			HttpSession session) {
-		return customerService.addToWishList(wid, pid, session);
+			@RequestParam String token,@RequestParam String email) {
+		return customerService.addToWishList(wid, pid, token,email);
 	}
 
 	@GetMapping("/wishlist-remove/{wid}/{pid}")
 	public ResponseEntity<ResponseStructure<Wishlist>> removeFromWishList(@PathVariable int wid, @PathVariable int pid,
-			HttpSession session) {
-		return customerService.removeFromWishList(wid, pid, session);
+			@RequestParam String token,@RequestParam String email) {
+		return customerService.removeFromWishList(wid, pid, token ,email);
 	}
 
 	@GetMapping("/wishlist-delete/{wid}")

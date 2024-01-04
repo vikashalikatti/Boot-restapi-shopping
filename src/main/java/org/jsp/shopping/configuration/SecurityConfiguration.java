@@ -23,8 +23,11 @@ public class SecurityConfiguration {
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-		http.cors().and().csrf().disable().authorizeRequests().requestMatchers("**").permitAll().anyRequest()
-				.authenticated().and().httpBasic();
+//		http.cors().and().csrf().disable().authorizeRequests().requestMatchers("**").permitAll().anyRequest()
+//				.authenticated().and().httpBasic();
+//		return http.build();
+		
+		http.cors().and().csrf().disable().authorizeHttpRequests((requests)->requests.requestMatchers("**").permitAll().anyRequest().authenticated());
 		return http.build();
 	}
 

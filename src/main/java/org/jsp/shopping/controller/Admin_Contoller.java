@@ -1,7 +1,8 @@
 package org.jsp.shopping.controller;
 
 import java.util.List;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jsp.shopping.dto.Admin;
 import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Merchant;
@@ -29,8 +30,10 @@ public class Admin_Contoller {
 	@Autowired
 	AdminService adminService;
 
+
 	@PostMapping("/create")
 	public ResponseEntity<ResponseStructure<Admin>> createAdmin(@ModelAttribute Admin admin) {
+		
 		return adminService.createAdmin(admin);
 	}
 
@@ -45,7 +48,8 @@ public class Admin_Contoller {
 	}
 
 	@GetMapping("/product-changestatus/{id}")
-	public ResponseEntity<ResponseStructure<List<Product>>> changeStatus(@PathVariable int id, @RequestParam("token") String authtoken) {
+	public ResponseEntity<ResponseStructure<List<Product>>> changeStatus(@PathVariable int id,
+			@RequestParam("token") String authtoken) {
 		return adminService.changeStatus(id, authtoken);
 	}
 
@@ -60,12 +64,13 @@ public class Admin_Contoller {
 	}
 
 	@PostMapping("/payment-add")
-	public ResponseEntity<ResponseStructure<Payment>> addpayment(@RequestParam("token") String authtoken, @ModelAttribute Payment payment) {
+	public ResponseEntity<ResponseStructure<Payment>> addpayment(@RequestParam("token") String authtoken,
+			@ModelAttribute Payment payment) {
 		return adminService.addpayment(authtoken, payment);
 	}
-	
+
 	@GetMapping("/view-all-payment")
-	public ResponseEntity<ResponseStructure<List<Payment>>> viewallPayment(@RequestParam("token") String authtoken){
+	public ResponseEntity<ResponseStructure<List<Payment>>> viewallPayment(@RequestParam("token") String authtoken) {
 		return adminService.viewallPayment(authtoken);
 	}
 

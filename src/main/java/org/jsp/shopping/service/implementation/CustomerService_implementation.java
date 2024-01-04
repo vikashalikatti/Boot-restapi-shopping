@@ -345,6 +345,7 @@ public class CustomerService_implementation implements CustomerService {
 			if (product.getStock() >= 1) {
 
 				ShoppingCart cart = customer.getShoppingCart();
+				System.out.println(cart);
 				if (cart == null) {
 					cart = this.shoppingCart;
 				}
@@ -416,8 +417,8 @@ public class CustomerService_implementation implements CustomerService {
 					|| customer.getShoppingCart().getItems().isEmpty()) {
 				structure.setData(null);
 				structure.setMessage("No Items in cart");
-				structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
-				return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
+				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
 			} else {
 				List<Item> items = customer.getShoppingCart().getItems();
 				structure.setData(items);
@@ -475,9 +476,8 @@ public class CustomerService_implementation implements CustomerService {
 			String name) {
 		Customer customer = customerRepository.findByEmail(email);
 		ResponseStructure<List<Wishlist>> structure = new ResponseStructure<>();
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Logain Again");
+		if (jwtUtil.isValidToken(token)) {
+			structure.setMessage("Unauthorized");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
@@ -526,12 +526,12 @@ public class CustomerService_implementation implements CustomerService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<List<Wishlist>>> view_wishlist(HttpSession session) {
-		Customer customer = (Customer) session.getAttribute("customer");
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> view_wishlist(String email, String token) {
+		Customer customer = customerRepository.findByEmail(email);
+		System.out.println(customer);
 		ResponseStructure<List<Wishlist>> structure = new ResponseStructure<>();
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Logain Again");
+		if (jwtUtil.isValidToken(token)) {
+			structure.setMessage("Unauthorized");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
@@ -539,102 +539,114 @@ public class CustomerService_implementation implements CustomerService {
 			if (list == null || list.isEmpty()) {
 				structure.setData(null);
 				structure.setMessage("No Wishlist Found");
-				structure.setStatus(HttpStatus.NOT_FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
 			} else {
 				structure.setData(list);
 				structure.setMessage("Wishlist");
-				structure.setStatus(HttpStatus.FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.FOUND);
+				structure.setStatus(HttpStatus.OK.value());
+				return new ResponseEntity<>(structure, HttpStatus.OK);
 			}
 		}
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Wishlist>> viewWishlistProducts(HttpSession session, int id) {
-		Customer customer = (Customer) session.getAttribute("customer");
-		ResponseStructure<Wishlist> structure = new ResponseStructure<>();
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Logain Again");
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> viewWishlistProducts(String token, int id, String email) {
+		Customer customer = customerRepository.findByEmail(email);
+		ResponseStructure<List<Wishlist>> structure = new ResponseStructure<>();
+		if (jwtUtil.isValidToken(token)) { // Corrected condition
+			structure.setMessage("Unauthorized");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			Wishlist wishlist = wishlistRepository.findById(id).orElse(null);
-			if (wishlist.getProducts() == null || wishlist.getProducts().isEmpty()) {
+			List<Wishlist> wishlist = customer.getWishlists();
+			if (wishlist == null || wishlist.isEmpty()) { // Simplified condition
 				structure.setData(null);
 				structure.setMessage("No items present");
-				structure.setStatus(HttpStatus.NOT_FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
 			} else {
 				structure.setData(wishlist);
-				structure.setMessage("Product in Wishlist");
-				structure.setStatus(HttpStatus.FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+				structure.setMessage("Products in Wishlist");
+				structure.setStatus(HttpStatus.OK.value());
+				return new ResponseEntity<>(structure, HttpStatus.OK);
 			}
 		}
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Wishlist>> addToWishList(int wid, int pid, HttpSession session) {
-		Customer customer = (Customer) session.getAttribute("customer");
+	public ResponseEntity<ResponseStructure<Wishlist>> addToWishList(int wid, int pid, String token, String email) {
+		Customer customer = customerRepository.findByEmail(email);
 		ResponseStructure<Wishlist> structure = new ResponseStructure<>();
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Logain Again");
+		if (jwtUtil.isValidToken(token)) {
+			structure.setMessage("Unauthorized");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			Wishlist wishlist = wishlistRepository.findById(wid).orElse(null);
-			Product product = productRepository.findById(pid).orElse(null);
+			if (customer == null) {
+				structure.setData(null);
+				structure.setMessage("No customer found");
+				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+			} else {
+				Wishlist wishlist = wishlistRepository.findById(wid).orElse(null);
+				Product product = productRepository.findById(pid).orElse(null);
 
-			List<Product> list = wishlist.getProducts();
-			if (list == null) {
-				list = new ArrayList<>();
-			}
-			boolean flag = true;
-			for (Product product2 : list) {
-				if (product2 == product) {
-					flag = false;
-					break;
+				List<Product> list = wishlist.getProducts();
+				if (list == null) {
+					list = new ArrayList<>();
+				}
+				boolean flag = true;
+				for (Product product2 : list) {
+					if (product2 == product) {
+						flag = false;
+						break;
+					}
+				}
+				if (flag) {
+					list.add(product);
+
+					wishlist.setProducts(list);
+					wishlistRepository.save(wishlist);
+					structure.setData(wishlist);
+					structure.setMessage("Item added to Wishlist");
+					structure.setStatus(HttpStatus.OK.value());
+					return new ResponseEntity<>(structure, HttpStatus.OK);
+				} else {
+					structure.setData(null);
+					structure.setMessage("Item already exists in Wishlist");
+					structure.setStatus(HttpStatus.ALREADY_REPORTED.value());
+					return new ResponseEntity<>(structure, HttpStatus.ALREADY_REPORTED);
 				}
 			}
-			if (flag) {
-				list.add(product);
-
-				wishlist.setProducts(list);
-				wishlistRepository.save(wishlist);
-				structure.setData(wishlist);
-				structure.setMessage("Item Added to Wish list");
-				structure.setStatus(HttpStatus.CREATED.value());
-				return new ResponseEntity<>(structure, HttpStatus.CREATED);
-			} else {
-				structure.setData(null);
-				structure.setMessage("Item Already Exists in Wishlist");
-				structure.setStatus(HttpStatus.ALREADY_REPORTED.value());
-				return new ResponseEntity<>(structure, HttpStatus.ALREADY_REPORTED);
-			}
 		}
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Wishlist>> removeFromWishList(int wid, int pid, HttpSession session) {
-		Customer customer = (Customer) session.getAttribute("customer");
+	public ResponseEntity<ResponseStructure<Wishlist>> removeFromWishList(int wid, int pid, String token,
+			String email) {
+		Customer customer = customerRepository.findByEmail(email);
 		ResponseStructure<Wishlist> structure = new ResponseStructure<>();
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Logain Again");
+		if (jwtUtil.isValidToken(token)) {
+			structure.setMessage("Unauthorized");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			Wishlist wishlist = wishlistRepository.findById(wid).orElse(null);
-			Product product = productRepository.findById(pid).orElse(null);
-			wishlist.getProducts().remove(product);
-			wishlistRepository.save(wishlist);
-			structure.setData(wishlist);
-			structure.setMessage("Item Removed from Wish list");
-			structure.setStatus(HttpStatus.ACCEPTED.value());
-			return new ResponseEntity<>(structure, HttpStatus.ACCEPTED);
+			if (customer == null) {
+				structure.setData(null);
+				structure.setMessage("No customer found");
+				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+			} else {
+				Wishlist wishlist = wishlistRepository.findById(wid).orElse(null);
+				Product product = productRepository.findById(pid).orElse(null);
+				wishlist.getProducts().remove(product);
+				wishlistRepository.save(wishlist);
+				structure.setData(wishlist);
+				structure.setMessage("Item Removed from Wish list");
+				structure.setStatus(HttpStatus.ACCEPTED.value());
+				return new ResponseEntity<>(structure, HttpStatus.ACCEPTED);
+			}
 		}
 	}
 
@@ -818,6 +830,33 @@ public class CustomerService_implementation implements CustomerService {
 		structure.setStatus(HttpStatus.OK.value());
 		structure.setMessage("Logged out successfully");
 		return new ResponseEntity<>(structure, HttpStatus.CREATED);
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> addToWishlist(String email, String token, int id) {
+		Customer customer = customerRepository.findByEmail(email);
+
+		ResponseStructure<List<Wishlist>> structure = new ResponseStructure<>();
+		if (jwtUtil.isValidToken(token)) {
+			structure.setMessage("Unauthorized");
+			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+		} else {
+			List<Wishlist> list = customer.getWishlists();
+			if (list.isEmpty()) {
+				structure.setData(null);
+				structure.setMessage("create wish list");
+				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+			} else {
+				structure.setData(list);
+				structure.setMessage("wishlist");
+				structure.setStatus(HttpStatus.OK.value());
+				return new ResponseEntity<>(structure, HttpStatus.OK);
+			}
+
+		}
+
 	}
 
 }
