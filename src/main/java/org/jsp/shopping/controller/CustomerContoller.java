@@ -118,19 +118,19 @@ public class CustomerContoller {
 	}
 
 	@PostMapping("/placeorder")
-	public ResponseEntity<ResponseStructure<Customer>> checkAddress(HttpSession session, @RequestParam int payid) {
-		return customerService.checkAddress(session, payid);
+	public ResponseEntity<ResponseStructure<Customer>> checkAddress(@RequestParam String token,@RequestParam String email, @RequestParam int payid) {
+		return customerService.checkAddress(token,email, payid);
 	}
 
 	@PostMapping("/submitorder")
-	public ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(HttpSession session, @RequestParam int pid,
+	public ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(@RequestParam String token,@RequestParam String email, @RequestParam int payid,
 			@RequestParam String address) throws RazorpayException {
-		return customerService.submitOrder(session, pid, address);
+		return customerService.submitOrder(token,email, payid, address);
 	}
 
 	@GetMapping("/orders-view")
-	public ResponseEntity<ResponseStructure<List<ShoppingOrder>>> viewOrder(HttpSession session) {
-		return customerService.viewOrders(session);
+	public ResponseEntity<ResponseStructure<List<ShoppingOrder>>> viewOrder(@RequestParam String token,@RequestParam String email) {
+		return customerService.viewOrders(token,email);
 	}
 
 	@PostMapping("/forgotpassword")

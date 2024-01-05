@@ -45,11 +45,11 @@ public interface CustomerService {
 
 	ResponseEntity<ResponseStructure<List<Payment>>> checkPayment(String token, String email);
 
-	ResponseEntity<ResponseStructure<Customer>> checkAddress(HttpSession session, int pid);
+	ResponseEntity<ResponseStructure<Customer>> checkAddress(String token, String email, int pid);
 
-	ResponseEntity<ResponseStructure<List<ShoppingOrder>>> viewOrders(HttpSession session);
+	ResponseEntity<ResponseStructure<List<ShoppingOrder>>> viewOrders(String token, String email);
 
-	ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(HttpSession session, int pid, String address)
+	ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(String token, String email, int pid, String address)
 			throws RazorpayException;
 
 	ResponseEntity<ResponseStructure<Customer>> forgotLink(String email) throws Exception;

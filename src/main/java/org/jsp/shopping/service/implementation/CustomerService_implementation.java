@@ -719,32 +719,36 @@ public class CustomerService_implementation implements CustomerService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Customer>> checkAddress(HttpSession session, int pid) {
+	public ResponseEntity<ResponseStructure<Customer>> checkAddress(String token, String email, int pid) {
 
-		Customer customer = (Customer) session.getAttribute("customer");
 		ResponseStructure<Customer> structure = new ResponseStructure<>();
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Logain Again");
+		Customer customer = customerRepository.findByEmail(email);
+		if (jwtUtil.isValidToken(token)) {
+			structure.setMessage("Unauthorized");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			structure.setData(customer);
-			structure.setMessage("procced for payment");
-			structure.setStatus(HttpStatus.OK.value());
-			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+			if (customer == null) {
+				structure.setData(null);
+				structure.setMessage("No customer found");
+				structure.setStatus(HttpStatus.BAD_REQUEST.value());
+				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+			} else {
+				structure.setData(customer);
+				structure.setMessage("procced for payment");
+				structure.setStatus(HttpStatus.OK.value());
+				return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
+			}
 		}
-
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<List<ShoppingOrder>>> viewOrders(HttpSession session) {
+	public ResponseEntity<ResponseStructure<List<ShoppingOrder>>> viewOrders(String token, String email) {
 
-		Customer customer = (Customer) session.getAttribute("customer");
 		ResponseStructure<List<ShoppingOrder>> structure = new ResponseStructure<>();
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Logain Again");
+		Customer customer = customerRepository.findByEmail(email);
+		if (jwtUtil.isValidToken(token)) {
+			structure.setMessage("Unauthorized");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
@@ -764,76 +768,81 @@ public class CustomerService_implementation implements CustomerService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(HttpSession session, @RequestParam int pid,
-			@RequestParam String address) throws RazorpayException {
-
-		Customer customer = (Customer) session.getAttribute("customer");
+	public ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(String token, String email,
+			@RequestParam int pid, @RequestParam String address) throws RazorpayException {
 		ResponseStructure<ShoppingOrder> structure = new ResponseStructure<>();
-		if (customer == null) {
-			structure.setData(null);
-			structure.setMessage("Login Again");
+		Customer customer = customerRepository.findByEmail(email);
+		if (jwtUtil.isValidToken(token)) {
+			structure.setMessage("Unauthorized");
 			structure.setStatus(HttpStatus.UNAUTHORIZED.value());
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
-			Payment payment = paymentRepository.findById(pid).orElse(null);
-			ShoppingOrder order = new ShoppingOrder();
-			order.setAddress(address);
-			order.setPaymentMode(payment.getName());
-			order.setDeliveryDate(LocalDate.now().plusDays(3));
-			ShoppingCart cart = customer.getShoppingCart();
-			if (cart == null) {
-				structure.setData(null);
-				structure.setMessage("Please add items to your cart");
-				structure.setStatus(HttpStatus.NOT_FOUND.value());
-				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
-			}
-			if (cart.getItems() == null || cart.getItems().isEmpty()) {
-				structure.setData(null);
-				structure.setMessage("Please add items to your cart");
-				structure.setStatus(HttpStatus.BAD_REQUEST.value());
-				return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
-			}
-			double total = 0;
-			for (Item item : cart.getItems()) {
-				total = total + item.getPrice();
-			}
-			order.setTotalPrice(total);
-			order.setItems(cart.getItems());
 
-			if (payment.getName().equalsIgnoreCase("RazorPay")) {
-				JSONObject object = new JSONObject();
-				object.put("currency", "INR");
-				object.put("amount", total * 100);
-
-				RazorpayClient client = new RazorpayClient("your razorpayid","your razorpaykey");
-				Order order1 = client.orders.create(object);
-				order.setStatus(order1.get("status"));
-				order.setCurrency("INR");
-				order.setOrderId(order1.get("id"));
-				order.setPayment_key("rzp_test_a5jX27qK8Szlyb");
-				order.setCompany_name("E-Kart");
-				structure.setMessage("Order created successfully");
-				structure.setData(order);
-				structure.setStatus(HttpStatus.CREATED.value());
-				return new ResponseEntity<>(structure, HttpStatus.CREATED);
+			if (customer == null) {
+				structure.setData(null);
+				structure.setMessage("Logain Again");
+				structure.setStatus(HttpStatus.UNAUTHORIZED.value());
+				return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 			} else {
-				List<ShoppingOrder> list = customer.getOrders();
-				if (list == null) {
-					list = new ArrayList<>();
+				Payment payment = paymentRepository.findById(pid).orElse(null);
+				ShoppingOrder order = new ShoppingOrder();
+				order.setAddress(address);
+				order.setPaymentMode(payment.getName());
+				order.setDeliveryDate(LocalDate.now().plusDays(3));
+				ShoppingCart cart = customer.getShoppingCart();
+				if (cart == null) {
+					structure.setData(null);
+					structure.setMessage("Please add items to your cart");
+					structure.setStatus(HttpStatus.NOT_FOUND.value());
+					return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
 				}
-				list.add(order);
-				customer.setOrders(list);
-				customer.setAddress(address);
-				cart.setItems(null);
-				customer.setShoppingCart(null);
-				Customer customer1 = customerRepository.save(customer);
-				cartRepository.delete(cart);
-				session.removeAttribute("customer");
-				session.setAttribute("customer", customer1);
-				structure.setMessage("Order created successfully");
-				structure.setData(order);
-				structure.setStatus(HttpStatus.CREATED.value());
-				return new ResponseEntity<>(structure, HttpStatus.CREATED);
+				if (cart.getItems() == null || cart.getItems().isEmpty()) {
+					structure.setData(null);
+					structure.setMessage("Please add items to your cart");
+					structure.setStatus(HttpStatus.BAD_REQUEST.value());
+					return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+				}
+				double total = 0;
+				for (Item item : cart.getItems()) {
+					total = total + item.getPrice();
+				}
+				order.setTotalPrice(total);
+				order.setItems(cart.getItems());
+
+				if (payment.getName().equalsIgnoreCase("RazorPay")) {
+					JSONObject object = new JSONObject();
+					object.put("currency", "INR");
+					object.put("amount", total * 100);
+
+					RazorpayClient client = new RazorpayClient("your razorpayid","your razorpaykey");
+					Order order1 = client.orders.create(object);
+					order.setStatus(order1.get("status"));
+					order.setCurrency("INR");
+					order.setOrderId(order1.get("id"));
+					order.setPayment_key("rzp_test_a5jX27qK8Szlyb");
+					order.setCompany_name("E-Kart");
+					structure.setMessage("Order created successfully");
+					structure.setData(order);
+					structure.setStatus(HttpStatus.CREATED.value());
+					return new ResponseEntity<>(structure, HttpStatus.CREATED);
+				} else {
+					List<ShoppingOrder> list = customer.getOrders();
+					if (list == null) {
+						list = new ArrayList<>();
+					}
+					list.add(order);
+					customer.setOrders(list);
+					customer.setAddress(address);
+					cart.setItems(null);
+					customer.setShoppingCart(null);
+//					Customer customer1 = customerRepository.save(customer);
+					customerRepository.save(customer);
+					cartRepository.delete(cart);
+					structure.setMessage("Order created successfully");
+					structure.setData(order);
+					structure.setStatus(HttpStatus.CREATED.value());
+					return new ResponseEntity<>(structure, HttpStatus.CREATED);
+				}
 			}
 		}
 	}
