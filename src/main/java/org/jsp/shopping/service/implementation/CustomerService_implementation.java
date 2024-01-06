@@ -3,6 +3,8 @@ package org.jsp.shopping.service.implementation;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -105,7 +107,13 @@ public class CustomerService_implementation implements CustomerService {
 		// logic for sending the mail
 		if (mail.sendLink(customer)) {
 			customer.setRole("customer");
-			customerRepository.save(customer);
+			List<Customer> existingCustomers = customerRepository.findAll();
+	        Collections.sort(existingCustomers, Comparator.comparing(Customer::getName));
+	        existingCustomers.add(customer);
+
+			customerRepository.saveAll(existingCustomers);
+			
+//			customerRepository.save(customer);
 
 			structure.setData(customer);
 			structure.setMessage("Verification Link send to Email Succesfull");
@@ -342,64 +350,57 @@ public class CustomerService_implementation implements CustomerService {
 			return new ResponseEntity<>(structure, HttpStatus.UNAUTHORIZED);
 		} else {
 			Product product = productRepository.findById(id).orElse(null);
-			if (product.getStock() >= 1) {
-
-				ShoppingCart cart = customer.getShoppingCart();
-
-				if (cart == null) {
-					cart = this.shoppingCart;
-				}
-				List<Item> items = cart.getItems();
-				if (items == null) {
-					items = new ArrayList<>();
-				}
-
-				if (items.isEmpty()) {
-					item.setDescription(product.getDescription());
-					item.setImage(product.getImage());
-					item.setName(product.getName());
-					item.setPrice(product.getPrice());
-					item.setQuantity(1);
-					items.add(item);
-				} else {
-					boolean flag = false;
-					for (Item item : items) {
-						if (item.getName().equals(product.getName())) {
-							item.setQuantity(item.getQuantity() + 1);
-							item.setPrice(item.getPrice() + product.getPrice());
-							item.setDescription(product.getDescription());
-							item.setImage(product.getImage());
-							flag = false;
-							break;
-						} else {
-							flag = true;
-						}
-					}
-					if (flag) {
-						item.setDescription(product.getDescription());
-						item.setImage(product.getImage());
-						item.setName(product.getName());
-						item.setPrice(product.getPrice());
-						item.setQuantity(1);
-						items.add(item);
-					}
-				}
-				cart.setItems(items);
-				customer.setShoppingCart(cart);
-
-				product.setStock(product.getStock() - 1);
-				productRepository.save(product);
-				customerRepository.save(customer);
-				structure.setData(product);
-				structure.setMessage("Product Added Successful");
-				structure.setStatus(HttpStatus.OK.value());
-				return new ResponseEntity<>(structure, HttpStatus.OK);
-			} else {
+			if (product == null || product.getStock() < 1) {
 				structure.setData(null);
 				structure.setMessage("Out of Stock");
 				structure.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
 				return new ResponseEntity<>(structure, HttpStatus.NOT_ACCEPTABLE);
 			}
+
+			ShoppingCart cart = customer.getShoppingCart();
+			if (cart == null) {
+				cart = this.shoppingCart;
+			}
+
+			List<Item> items = cart.getItems();
+			if (items == null) {
+				items = new ArrayList<>();
+			}
+
+			Item newItem = new Item(); // Instantiate a new Item object
+			newItem.setDescription(product.getDescription());
+			newItem.setImage(product.getImage());
+			newItem.setName(product.getName());
+			newItem.setPrice(product.getPrice());
+			newItem.setQuantity(1);
+
+			boolean found = false;
+			for (Item item : items) {
+				if (item.getName().equals(newItem.getName())) {
+					item.setQuantity(item.getQuantity() + 1);
+					item.setPrice(item.getPrice() + product.getPrice());
+					item.setDescription(product.getDescription());
+					item.setImage(product.getImage());
+					found = true;
+					break;
+				}
+			}
+
+			if (!found) {
+				items.add(newItem);
+			}
+
+			cart.setItems(items);
+			customer.setShoppingCart(cart);
+
+			product.setStock(product.getStock() - 1);
+			productRepository.save(product);
+			customerRepository.save(customer);
+
+			structure.setData(product);
+			structure.setMessage("Product Added Successfully");
+			structure.setStatus(HttpStatus.OK.value());
+			return new ResponseEntity<>(structure, HttpStatus.OK);
 		}
 	}
 

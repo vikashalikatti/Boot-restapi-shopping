@@ -15,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Email;
@@ -29,13 +30,14 @@ import lombok.Data;
 @Valid
 public class Merchant {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private int id;
+//	@Id
+//	@GeneratedValue(strategy = GenerationType.IDENTITY)
+//	private int id;
 
 	@NotBlank(message = "Name must not be blank.")
 	private String name;
 
+	@Id
 	@Email(message = "Please provide a valid email address.")
 	@NotNull(message = "email is required")
 	private String email;
@@ -73,5 +75,4 @@ public class Merchant {
 
 	private LocalDateTime otpGeneratedTime;
 
-	
 }
