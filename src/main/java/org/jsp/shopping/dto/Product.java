@@ -26,4 +26,10 @@ public class Product {
 	@Column(columnDefinition = "MEDIUMBLOB")
 	private byte[] image;
 	private boolean status;
+
+	private String brand;
+	private String category;
+	private String manufacturer; 
+	private String color;
+	private String size;
 }

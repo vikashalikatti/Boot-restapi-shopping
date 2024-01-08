@@ -884,4 +884,29 @@ public class CustomerService_implementation implements CustomerService {
 
 	}
 
+	@Override
+	public ResponseEntity<ResponseStructure<List<Customer>>> searchByBrandOrCategory(String brand, String category) {
+	    ResponseStructure<List<Customer>> structure = new ResponseStructure<>();
+
+	    if (brand != null || category != null) {
+	        // Assuming you have a method in customerRepository for searching by brand or category
+	        List<Customer> customers = productRepository.findByBrandOrCategory(brand, category);
+
+	        if (customers.isEmpty()) {
+	            structure.setMessage("No customers found for the given brand or category.");
+	            structure.setData(null);
+	            structure.setStatus(HttpStatus.NOT_FOUND.value());
+	            return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+	        }
+
+	        structure.setData(customers);
+	        structure.setMessage("Customers found for the given brand or category.");
+	        structure.setStatus(HttpStatus.OK.value());
+	        return new ResponseEntity<>(structure, HttpStatus.OK);
+	    } else {
+	        structure.setMessage("Both brand and category are null. Provide at least one parameter.");
+	        structure.setStatus(HttpStatus.BAD_REQUEST.value());
+	        return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+	    }
+	}
 }

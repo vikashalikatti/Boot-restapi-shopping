@@ -64,4 +64,6 @@ public interface CustomerService {
 
 	ResponseEntity<ResponseStructure<List<Wishlist>>> addToWishlist(String email, String token, int id);
 
+	ResponseEntity<ResponseStructure<List<Customer>>> searchByBrandOrCategory(String brand, String category);
+
 }

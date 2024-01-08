@@ -61,76 +61,88 @@ public class CustomerContoller {
 	}
 
 	@GetMapping("/cart-add/{id}")
-	public ResponseEntity<ResponseStructure<Product>> addCart(@RequestParam String email,@RequestParam String token, @PathVariable int id) {
-		return customerService.addCart(email,token, id);
+	public ResponseEntity<ResponseStructure<Product>> addCart(@RequestParam String email, @RequestParam String token,
+			@PathVariable int id) {
+		return customerService.addCart(email, token, id);
 	}
 
 	@GetMapping("/cart-view")
-	public ResponseEntity<ResponseStructure<List<Item>>> viewCart(@RequestParam String email,@RequestParam String token) {
-		return customerService.viewCart(email,token);
+	public ResponseEntity<ResponseStructure<List<Item>>> viewCart(@RequestParam String email,
+			@RequestParam String token) {
+		return customerService.viewCart(email, token);
 	}
 
 	@GetMapping("/cart-remove/{id}")
-	public ResponseEntity<ResponseStructure<List<Item>>> removeFromCart(@RequestParam String email,@RequestParam String token, @PathVariable int id) {
-		return customerService.removeFromCart(email, token,id);
+	public ResponseEntity<ResponseStructure<List<Item>>> removeFromCart(@RequestParam String email,
+			@RequestParam String token, @PathVariable int id) {
+		return customerService.removeFromCart(email, token, id);
 	}
 
 	@GetMapping("/wishlist-add/{id}")
-	public ResponseEntity<ResponseStructure<List<Wishlist>>> addToWishlist(@RequestParam String email,@RequestParam String token,@PathVariable int id){
-		return customerService.addToWishlist(email,token,id);
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> addToWishlist(@RequestParam String email,
+			@RequestParam String token, @PathVariable int id) {
+		return customerService.addToWishlist(email, token, id);
 	}
+
 	@PostMapping("/wishlist-create/{id}")
-	public ResponseEntity<ResponseStructure<List<Wishlist>>> create_wishlist(@RequestParam String email,@RequestParam String token, @PathVariable int id,
-			@RequestParam String name) {
-		return customerService.create_wishlist(email,token, id, name);
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> create_wishlist(@RequestParam String email,
+			@RequestParam String token, @PathVariable int id, @RequestParam String name) {
+		return customerService.create_wishlist(email, token, id, name);
 	}
 
 	@GetMapping("/wishlist-view")
-	public ResponseEntity<ResponseStructure<List<Wishlist>>> view_wishlist(@RequestParam String email,@RequestParam String token) {
-		return customerService.view_wishlist(email,token);
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> view_wishlist(@RequestParam String email,
+			@RequestParam String token) {
+		return customerService.view_wishlist(email, token);
 	}
 
 	@GetMapping("/wishlist/product-view/{id}")
-	public ResponseEntity<ResponseStructure<List<Wishlist>>> viewWishlistProducts(@PathVariable int id, @RequestParam String token,@RequestParam String email) {
-		return customerService.viewWishlistProducts(token, id,email);
+	public ResponseEntity<ResponseStructure<List<Wishlist>>> viewWishlistProducts(@PathVariable int id,
+			@RequestParam String token, @RequestParam String email) {
+		return customerService.viewWishlistProducts(token, id, email);
 	}
 
 	@GetMapping("/wishlist-add/{wid}/{pid}")
 	public ResponseEntity<ResponseStructure<Wishlist>> addToWishList(@PathVariable int wid, @PathVariable int pid,
-			@RequestParam String token,@RequestParam String email) {
-		return customerService.addToWishList(wid, pid, token,email);
+			@RequestParam String token, @RequestParam String email) {
+		return customerService.addToWishList(wid, pid, token, email);
 	}
 
 	@GetMapping("/wishlist-remove/{wid}/{pid}")
 	public ResponseEntity<ResponseStructure<Wishlist>> removeFromWishList(@PathVariable int wid, @PathVariable int pid,
-			@RequestParam String token,@RequestParam String email) {
-		return customerService.removeFromWishList(wid, pid, token ,email);
+			@RequestParam String token, @RequestParam String email) {
+		return customerService.removeFromWishList(wid, pid, token, email);
 	}
 
 	@GetMapping("/wishlist-delete/{wid}")
-	public ResponseEntity<ResponseStructure<Wishlist>> deleteWishlist(@PathVariable int wid, @RequestParam String token,@RequestParam String email) {
-		return customerService.deleteWishlist(wid, token,email);
+	public ResponseEntity<ResponseStructure<Wishlist>> deleteWishlist(@PathVariable int wid, @RequestParam String token,
+			@RequestParam String email) {
+		return customerService.deleteWishlist(wid, token, email);
 	}
 
 	@GetMapping("/placeorder")
-	public ResponseEntity<ResponseStructure<List<Payment>>> checkPayment(@RequestParam String token,@RequestParam String email) {
-		return customerService.checkPayment(token,email);
+	public ResponseEntity<ResponseStructure<List<Payment>>> checkPayment(@RequestParam String token,
+			@RequestParam String email) {
+		return customerService.checkPayment(token, email);
 	}
 
 	@PostMapping("/placeorder")
-	public ResponseEntity<ResponseStructure<Customer>> checkAddress(@RequestParam String token,@RequestParam String email, @RequestParam int payid) {
-		return customerService.checkAddress(token,email, payid);
+	public ResponseEntity<ResponseStructure<Customer>> checkAddress(@RequestParam String token,
+			@RequestParam String email, @RequestParam int payid) {
+		return customerService.checkAddress(token, email, payid);
 	}
 
 	@PostMapping("/submitorder")
-	public ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(@RequestParam String token,@RequestParam String email, @RequestParam int payid,
-			@RequestParam String address) throws RazorpayException {
-		return customerService.submitOrder(token,email, payid, address);
+	public ResponseEntity<ResponseStructure<ShoppingOrder>> submitOrder(@RequestParam String token,
+			@RequestParam String email, @RequestParam int payid, @RequestParam String address)
+			throws RazorpayException {
+		return customerService.submitOrder(token, email, payid, address);
 	}
 
 	@GetMapping("/orders-view")
-	public ResponseEntity<ResponseStructure<List<ShoppingOrder>>> viewOrder(@RequestParam String token,@RequestParam String email) {
-		return customerService.viewOrders(token,email);
+	public ResponseEntity<ResponseStructure<List<ShoppingOrder>>> viewOrder(@RequestParam String token,
+			@RequestParam String email) {
+		return customerService.viewOrders(token, email);
 	}
 
 	@PostMapping("/forgotpassword")
@@ -154,4 +166,11 @@ public class CustomerContoller {
 	public ResponseEntity<ResponseStructure<Customer>> logout(HttpSession httpSession) {
 		return customerService.logout(httpSession);
 	}
+
+	@GetMapping("/search")
+	public ResponseEntity<ResponseStructure<List<Customer>>> searchByBrandOrCategory(
+			@RequestParam(required = false) String brand, @RequestParam(required = false) String category) {
+		return customerService.searchByBrandOrCategory(brand,category);
+	}
+
 }
