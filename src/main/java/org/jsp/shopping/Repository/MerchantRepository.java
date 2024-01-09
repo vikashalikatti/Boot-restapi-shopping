@@ -11,5 +11,5 @@ public interface MerchantRepository extends JpaRepository<Merchant, String> {
 
 	Merchant findByMobile(long mobile);
 
-	Optional<Merchant> findById(int merchantId);
+//	Optional<Merchant> findById(int merchantId);
 }

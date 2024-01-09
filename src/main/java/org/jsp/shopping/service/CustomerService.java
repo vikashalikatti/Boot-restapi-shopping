@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Item;
+import org.jsp.shopping.dto.Merchant;
 import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
 import org.jsp.shopping.dto.ShoppingOrder;
@@ -64,6 +65,6 @@ public interface CustomerService {
 
 	ResponseEntity<ResponseStructure<List<Wishlist>>> addToWishlist(String email, String token, int id);
 
-	ResponseEntity<ResponseStructure<List<Customer>>> searchByBrandOrCategory(String brand, String category);
+	ResponseEntity<ResponseStructure<List<Product>>> searchByBrandOrCategory(String brand, String category);
 
 }

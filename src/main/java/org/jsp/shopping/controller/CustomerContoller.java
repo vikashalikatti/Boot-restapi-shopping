@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Item;
+import org.jsp.shopping.dto.Merchant;
 import org.jsp.shopping.dto.Payment;
 import org.jsp.shopping.dto.Product;
 import org.jsp.shopping.dto.ShoppingOrder;
@@ -168,7 +169,7 @@ public class CustomerContoller {
 	}
 
 	@GetMapping("/search")
-	public ResponseEntity<ResponseStructure<List<Customer>>> searchByBrandOrCategory(
+	public ResponseEntity<ResponseStructure<List<Product>>> searchByBrandOrCategory(
 			@RequestParam(required = false) String brand, @RequestParam(required = false) String category) {
 		return customerService.searchByBrandOrCategory(brand,category);
 	}

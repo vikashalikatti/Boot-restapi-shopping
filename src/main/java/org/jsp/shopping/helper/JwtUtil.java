@@ -92,25 +92,25 @@ public class JwtUtil {
 		}
 	}
 
-	public Merchant extractMerchantFromToken(String authToken) {
-		try {
-			Claims claims = parseJwtClaims(authToken);
-			if (claims == null) {
-				return null;
-			}
-
-			Integer merchantId = claims.get("merchantId", Integer.class);
-			if (merchantId == null) {
-				return null; // Handle missing or invalid merchantId gracefully
-			}
-
-			Optional<Merchant> merchantOptional = merchantRepository.findById(merchantId);
-			return merchantOptional.orElse(null);
-		} catch (JwtException | IllegalArgumentException e) {
-			e.printStackTrace(); // Log the exception for debugging
-			return null;
-		}
-	}
+//	public Merchant extractMerchantFromToken(String authToken) {
+//		try {
+//			Claims claims = parseJwtClaims(authToken);
+//			if (claims == null) {
+//				return null;
+//			}
+//
+//			Integer merchantId = claims.get("merchantId", Integer.class);
+//			if (merchantId == null) {
+//				return null; // Handle missing or invalid merchantId gracefully
+//			}
+//
+//			Optional<Merchant> merchantOptional = merchantRepository.findById(merchantId);
+//			return merchantOptional.orElse(null);
+//		} catch (JwtException | IllegalArgumentException e) {
+//			e.printStackTrace(); // Log the exception for debugging
+//			return null;
+//		}
+//	}
 
 	public String generateToken_for_admin(UserDetails userDetails, String role, Date expirationDate) {
 		String token = Jwts.builder().setSubject(userDetails.getUsername() + " | " + role) // Set the subject as the

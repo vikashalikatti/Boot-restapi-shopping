@@ -2,9 +2,10 @@ package org.jsp.shopping.Repository;
 
 import java.util.List;
 
-import org.jsp.shopping.dto.Customer;
 import org.jsp.shopping.dto.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ProductRepository extends JpaRepository<Product, Integer> {
 
@@ -12,6 +13,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
 	List<Product> findByStatus(boolean flag);
 
-	List<Customer> findByBrandOrCategory(String brand, String category);
+	@Query("SELECT p FROM Product p WHERE p.brand = :brand OR p.category = :category")
+	List<Product> findByBrandOrCategory(@Param("brand") String brand, @Param("category") String category);
 
 }

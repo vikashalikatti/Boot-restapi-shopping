@@ -11,5 +11,4 @@ public interface CustomerRepository extends JpaRepository<Customer, String> {
 
 	Customer findByMobile(long mobile);
 
-	
 }
