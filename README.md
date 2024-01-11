@@ -60,7 +60,7 @@ echo "# Spring Boot E-Commerce Project
   - **Testing with Postman:** Easily test the functionalities using Postman for API testing.
      - [![Postman](https://github.com/vikashalikatti/Boot-restapi-shopping/blob/master/postman-icon.png)](https://www.getpostman.com/)
   - **Swagger Documentation:** Explore and understand the APIs through interactive Swagger documentation.
-     - [![Swagger](https://swagger.io/wp-content/uploads/2020/04/logo.png)](http://localhost:8080/swagger-ui/index.html#/)
+     - [![Swagger](https://static1.smartbear.co/swagger/media/assets/images/swagger_logo.svg)](http://localhost:8080/swagger-ui/index.html#/)
 
 [![Spring Boot](https://www.vectorlogo.zone/logos/springio/springio-icon.svg)](https://spring.io/projects/spring-boot)
 [![Java](https://www.oracle.com/a/ocom/img/cb71-java-logo.png)](https://www.java.com/)
