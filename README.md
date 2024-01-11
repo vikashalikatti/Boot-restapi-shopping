@@ -1,4 +1,4 @@
-echo "# Spring Boot E-Commerce Project
+Spring Boot E-Commerce Project
 
 ## Table of Contents
 - [Installation](#installation)
@@ -22,8 +22,9 @@ echo "# Spring Boot E-Commerce Project
    \```bash
    mvn spring-boot:run
    \```
-5. Generate App password from google.
-6. Generate API keys from Razorpay website.
+5. Generate App password from Google.
+6. Generate API keys from the Razorpay website.
+
 ## Usage
 
 ### Customer
@@ -48,7 +49,6 @@ echo "# Spring Boot E-Commerce Project
 2. Approve new products added by Merchants.
 3. View a comprehensive list of all Merchants and Customers.
 
-
 ## Features
 
 - **User Authentication:** Secure user authentication and authorization using Spring Security and JWT tokens.
@@ -58,13 +58,11 @@ echo "# Spring Boot E-Commerce Project
 
   - **JWT Token Validation:** Utilize JWT tokens for secure user validation.
   - **Testing with Postman:** Easily test the functionalities using Postman for API testing.
-     - [![Postman](https://www.getpostman.com/img/v2/logo-glyph.png)](https://www.getpostman.com/)
+     -  [![Postman](https://github.com/vikashalikatti/Boot-restapi-shopping/raw/master/postman-icon.png)](htps://www.getpostman.com/)
   - **Swagger Documentation:** Explore and understand the APIs through interactive Swagger documentation.
-     - [![Swagger](https://swagger.io/wp-content/uploads/2020/04/logo.png)](http://localhost:8080/swagger-ui/index.html#/)
-
-[![Spring Boot](https://spring.io/images/spring-logo.svg)](https://spring.io/projects/spring-boot)
+     - [![Swagger](https://static1.smartbear.co/swagger/media/assets/images/swagger_logo.svg)](https://swagger.io/)
+  - ** Swagger link eg: "http://localhost:8080/swagger-ui/index.html#/"
 [![Java](https://www.oracle.com/a/ocom/img/cb71-java-logo.png)](https://www.java.com/)
-
 ## Contributing
 
 We welcome contributions! If you'd like to contribute:
@@ -76,4 +74,4 @@ We welcome contributions! If you'd like to contribute:
 
 ## Contact
 
-For any inquiries, feel free to contact us at (mailto:vikashalikatti2000@gmail.com)." > README.md
+For any inquiries, feel free to contact us at (vikashalikatti2000@gmail.com).".
