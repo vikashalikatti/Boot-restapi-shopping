@@ -58,7 +58,7 @@ Spring Boot E-Commerce Project
 
   - **JWT Token Validation:** Utilize JWT tokens for secure user validation.
   - **Testing with Postman:** Easily test the functionalities using Postman for API testing.
-     - [![Postman](https://github.com/vikashalikatti/Boot-restapi-shopping/blob/master/postman-icon.png | width=100)](https://www.getpostman.com/)
+     -  [![Postman](https://github.com/vikashalikatti/Boot-restapi-shopping/blob/master/postman-icon.png | width=100)](https://www.getpostman.com/)
   - **Swagger Documentation:** Explore and understand the APIs through interactive Swagger documentation.
      - [![Swagger](https://static1.smartbear.co/swagger/media/assets/images/swagger_logo.svg | width=100)](http://localhost:8080/swagger-ui/index.html#/)
 
@@ -75,4 +75,4 @@ We welcome contributions! If you'd like to contribute:
 
 ## Contact
 
-For any inquiries, feel free to contact us at (mailto:vikashalikatti2000@gmail.com).".
+For any inquiries, feel free to contact us at (vikashalikatti2000@gmail.com).".
