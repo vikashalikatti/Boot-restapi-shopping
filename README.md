@@ -8,11 +8,27 @@ Spring Boot E-Commerce Project
 - [Contact](#contact)
 - [Screen Shot](#screenshot)
 
-================ Software And Tools Required ================
-1.Java JDK 8+
-2.Spring Tool Suite or Eclipse EE (Enterprise Edition)
-3.MySQL Server
-4.MySQL Workbench
+# Software And Tools Required
+
+## 1. Java JDK 8+
+
+Ensure that you have Java JDK 8 or a later version installed. You can download the latest version of Java JDK from the official website: [Java Downloads](https://www.oracle.com/java/technologies/javase-downloads.html)
+
+## 2. Spring Tool Suite or Eclipse EE (Enterprise Edition)
+
+Choose an Integrated Development Environment (IDE) for Java development. You can use either Spring Tool Suite (STS) or Eclipse EE (Enterprise Edition). Download and install your preferred IDE:
+
+- [Spring Tool Suite](https://spring.io/tools) - An IDE based on Eclipse, tailored for developing Spring applications.
+- [Eclipse EE](https://www.eclipse.org/downloads/packages/release) - The Eclipse IDE for Java EE Developers.
+
+## 3. MySQL Server
+
+Install MySQL Server, which is used as the database for your Spring Boot E-Commerce Project. Download the MySQL Server from the official website: [MySQL Downloads](https://dev.mysql.com/downloads/mysql/)
+
+## 4. MySQL Workbench
+
+MySQL Workbench is a visual database design tool and administration tool for MySQL. Install MySQL Workbench to interact with and manage your MySQL database. Download it from the official website: [MySQL Workbench Downloads](https://dev.mysql.com/downloads/workbench/)
+
 
 ## Installation
 
