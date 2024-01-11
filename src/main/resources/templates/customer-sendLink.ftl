@@ -14,7 +14,7 @@
                 <p>With our platform, you can showcase your products and reach a wide audience of shoppers.</p>
                 <p>This link is valid for 5 minutes. Please use it within this time frame to complete your account setup.</p>
               <p>Valid Till :${formattedOTPExpirationTime}</p>
-              	<center><a href="http://localhost:3000/verify/${email}/${token}">
+              	<center><a href="http://localhost:8080/customer/verify-link/${email}/${token}">
     <button style="background-color: #FFA000; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
         Click Here to verify
     </button>

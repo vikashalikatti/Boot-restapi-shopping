@@ -57,7 +57,7 @@ public interface CustomerService {
 
 	ResponseEntity<ResponseStructure<Customer>> resetPassword(String email, String token);
 
-	ResponseEntity<ResponseStructure<Customer>> setpassword(String email, String password);
+	ResponseEntity<ResponseStructure<Customer>> setpassword(String email, String password,String token);
 
 	ResponseEntity<ResponseStructure<Customer>> logout(HttpSession httpSession);
 

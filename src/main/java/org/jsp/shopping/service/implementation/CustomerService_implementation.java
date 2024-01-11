@@ -109,11 +109,11 @@ public class CustomerService_implementation implements CustomerService {
 		if (mail.sendLink(customer)) {
 			customer.setRole("customer");
 			List<Customer> existingCustomers = customerRepository.findAll();
-	        Collections.sort(existingCustomers, Comparator.comparing(Customer::getName));
-	        existingCustomers.add(customer);
+			Collections.sort(existingCustomers, Comparator.comparing(Customer::getName));
+			existingCustomers.add(customer);
 
 			customerRepository.saveAll(existingCustomers);
-			
+
 //			customerRepository.save(customer);
 
 			structure.setData(customer);
@@ -226,7 +226,6 @@ public class CustomerService_implementation implements CustomerService {
 
 		if (customer.getToken().equals(token)) {
 			customer.setStatus(true);
-			customer.setToken(null);
 			Customer updatedCustomer = customerRepository.save(customer);
 
 			structure.setData(updatedCustomer);
@@ -242,15 +241,29 @@ public class CustomerService_implementation implements CustomerService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<Customer>> setpassword(String email, String password) {
+	public ResponseEntity<ResponseStructure<Customer>> setpassword(String email, String password, String token) {
 		Customer customer = customerRepository.findByEmail(email);
 		ResponseStructure<Customer> structure = new ResponseStructure<>();
-		customer.setPassword(encoder.encode(password));
-		customerRepository.save(customer);
-		structure.setData(customer);
-		structure.setMessage("Password Set Success");
-		structure.setStatus(HttpStatus.OK.value());
-		return new ResponseEntity<>(structure, HttpStatus.OK);
+		if (jwtUtil.isTokenExpired(token)) {
+			structure.setData(null);
+			structure.setMessage("Token has expired");
+			structure.setStatus(HttpStatus.BAD_REQUEST.value());
+			return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+		}
+		if (customer.getToken().equals(token)) {
+			customer.setToken(null);
+			customer.setPassword(encoder.encode(password));
+			customerRepository.save(customer);
+			structure.setData(customer);
+			structure.setMessage("Password Set Success");
+			structure.setStatus(HttpStatus.OK.value());
+			return new ResponseEntity<>(structure, HttpStatus.OK);
+		} else {
+			structure.setData(null);
+			structure.setMessage("Invalid Token");
+			structure.setStatus(HttpStatus.BAD_REQUEST.value());
+			return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+		}
 	}
 
 	@Override
@@ -887,26 +900,26 @@ public class CustomerService_implementation implements CustomerService {
 
 	@Override
 	public ResponseEntity<ResponseStructure<List<Product>>> searchByBrandOrCategory(String brand, String category) {
-	    ResponseStructure<List<Product>> structure = new ResponseStructure<>();
+		ResponseStructure<List<Product>> structure = new ResponseStructure<>();
 
-	    if (brand != null || category != null) {
-	        List<Product> products = productRepository.findByBrandOrCategory(brand, category);
+		if (brand != null || category != null) {
+			List<Product> products = productRepository.findByBrandOrCategory(brand, category);
 
-	        if (products.isEmpty()) {
-	            structure.setMessage("No customers found for the given brand or category.");
-	            structure.setData(null);
-	            structure.setStatus(HttpStatus.NOT_FOUND.value());
-	            return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
-	        }
+			if (products.isEmpty()) {
+				structure.setMessage("No customers found for the given brand or category.");
+				structure.setData(null);
+				structure.setStatus(HttpStatus.NOT_FOUND.value());
+				return new ResponseEntity<>(structure, HttpStatus.NOT_FOUND);
+			}
 
-	        structure.setData(products);
-	        structure.setMessage("Customers found for the given brand or category.");
-	        structure.setStatus(HttpStatus.OK.value());
-	        return new ResponseEntity<>(structure, HttpStatus.OK);
-	    } else {
-	        structure.setMessage("Both brand and category are null. Provide at least one parameter.");
-	        structure.setStatus(HttpStatus.BAD_REQUEST.value());
-	        return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
-	    }
+			structure.setData(products);
+			structure.setMessage("Customers found for the given brand or category.");
+			structure.setStatus(HttpStatus.OK.value());
+			return new ResponseEntity<>(structure, HttpStatus.OK);
+		} else {
+			structure.setMessage("Both brand and category are null. Provide at least one parameter.");
+			structure.setStatus(HttpStatus.BAD_REQUEST.value());
+			return new ResponseEntity<>(structure, HttpStatus.BAD_REQUEST);
+		}
 	}
 }

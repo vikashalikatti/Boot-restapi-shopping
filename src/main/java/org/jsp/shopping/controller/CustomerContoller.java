@@ -159,8 +159,8 @@ public class CustomerContoller {
 
 	@PostMapping("/reset-password")
 	public ResponseEntity<ResponseStructure<Customer>> setpassword(@RequestParam String email,
-			@RequestParam String password) {
-		return customerService.setpassword(email, password);
+			@RequestParam String password,@RequestParam String token) {
+		return customerService.setpassword(email, password,token);
 	}
 
 	@GetMapping("/logout")
