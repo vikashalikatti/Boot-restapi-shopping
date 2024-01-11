@@ -81,11 +81,11 @@ MySQL Workbench is a visual database design tool and administration tool for MyS
 
   - **JWT Token Validation:** Utilize JWT tokens for secure user validation.
   - **Testing with Postman:** Easily test the functionalities using Postman for API testing.
-     -  [![Postman](https://github.com/vikashalikatti/Boot-restapi-shopping/raw/master/postman-icon.png)](htps://www.getpostman.com/)
+     
   - **Swagger Documentation:** Explore and understand the APIs through interactive Swagger documentation.
-     - [![Swagger](https://static1.smartbear.co/swagger/media/assets/images/swagger_logo.svg)](https://swagger.io/)
+    
   - ** Swagger link eg: "http://localhost:8080/swagger-ui/index.html#/"
-[![Java](https://www.oracle.com/a/ocom/img/cb71-java-logo.png)](https://www.java.com/)
+
 ## Contributing
 
 We welcome contributions! If you'd like to contribute:
