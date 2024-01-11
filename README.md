@@ -8,6 +8,12 @@ Spring Boot E-Commerce Project
 - [Contact](#contact)
 - [Screen Shot](#screenshot)
 
+================ Software And Tools Required ================
+1.Java JDK 8+
+2.Spring Tool Suite or Eclipse EE (Enterprise Edition)
+3.MySQL Server
+4.MySQL Workbench
+
 ## Installation
 
 1. Clone the repository to your local machine.
