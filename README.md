@@ -62,7 +62,7 @@ echo "# Spring Boot E-Commerce Project
   - **Swagger Documentation:** Explore and understand the APIs through interactive Swagger documentation.
      - [![Swagger](https://swagger.io/wp-content/uploads/2020/04/logo.png)](http://localhost:8080/swagger-ui/index.html#/)
 
-[![Spring Boot](https://spring.io/images/spring-logo.svg)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://www.vectorlogo.zone/logos/springio/springio-icon.svg)](https://spring.io/projects/spring-boot)
 [![Java](https://www.oracle.com/a/ocom/img/cb71-java-logo.png)](https://www.java.com/)
 
 ## Contributing
